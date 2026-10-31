@@ -307,6 +307,10 @@ small `microsoft::projectairsim::Robot` that only creates, loads and initializes
 core_sim's own unit tests do. Do not link this library into a program that also links
 core_sim's real `Robot`.
 
+Each adapter has its own managers. Its TopicManager starts two dispatcher threads, which stay
+idle: the adapter reads the sensor directly. No socket is opened (the managers' `Start()` is not
+called).
+
 Results are read from each sensor's `getOutput()` message, so they carry the message's types
 (32-bit floats). core_sim declares `GetMagnetometerSettings()` and `GetBarometerSettings()` but
 does not define them; the adapters read those settings from the config as core_sim reads them.
