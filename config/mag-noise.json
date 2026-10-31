@@ -1,0 +1,7 @@
+{
+  "type": "magnetometer",
+  "scale-factor": 1.0,
+  "noise-sigma": "0.005 0.004 0.006",
+  "noise-bias": "0.001 0.002 0.003",
+  "update-rate-hz": 100
+}

@@ -1,0 +1,4 @@
+{
+  "type": "magnetometer",
+  "noise-sigma": "0.005 -0.001 0.005"
+}
