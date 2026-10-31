@@ -1,0 +1,16 @@
+{
+  "type": "imu",
+  "update-rate-hz": 250,
+  "accelerometer": {
+    "velocity-random-walk": 0.002353,
+    "tau": 800,
+    "bias-stability": 0.000353,
+    "turn-on-bias": "0.01 -0.02 0.03"
+  },
+  "gyroscope": {
+    "angle-random-walk": 0.0000872665,
+    "tau": 500,
+    "bias-stability": 0.0000223014,
+    "turn-on-bias": "0.001 0.002 -0.003"
+  }
+}
