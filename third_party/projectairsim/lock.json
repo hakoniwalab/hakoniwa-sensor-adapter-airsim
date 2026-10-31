@@ -3,6 +3,7 @@
   "commit": "92032a6c4d98724d6f23b7346b8c01be955910c3",
   "license": "MIT (LICENSE, NOTICE.txt)",
   "sources": [
+    "core_sim/src/clock.cpp",
     "core_sim/src/geodetic_converter.cpp",
     "core_sim/src/json_utils.cpp",
     "core_sim/src/logger.cpp",
@@ -368,6 +369,10 @@
     {
       "path": "core_sim/include/core_sim/transforms/transform_utils.hpp",
       "sha256": "56c41ae9295953930fd2428474aca563f18dd2141f583c169d47e85db931cb15"
+    },
+    {
+      "path": "core_sim/src/clock.cpp",
+      "sha256": "223f4884c97612d86c95dfb57bf3d5d6a7e2e8996d945f52b1e2e0c1e96ab982"
     },
     {
       "path": "core_sim/src/component.hpp",
