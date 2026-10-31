@@ -63,7 +63,11 @@ if(HAKONIWA_SENSOR_ADAPTER_AIRSIM_NATIVE)
     endif()
     target_link_libraries(projectairsim_core_sim_subset PUBLIC Eigen3::Eigen ${PAS_NNG_LIBRARY})
 
-    add_library(hakoniwa_sensor_adapter_airsim_native STATIC src/native/projectairsim_native_imu_adapter.cpp)
+    add_library(hakoniwa_sensor_adapter_airsim_native STATIC
+        src/native/projectairsim_native_imu_adapter.cpp
+        src/native/projectairsim_native_mag_adapter.cpp
+        src/native/projectairsim_native_baro_adapter.cpp
+        src/native/projectairsim_native_gps_adapter.cpp)
     target_include_directories(hakoniwa_sensor_adapter_airsim_native PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include")
     target_link_libraries(hakoniwa_sensor_adapter_airsim_native
         PUBLIC hakoniwa_sensor_adapter PRIVATE projectairsim_core_sim_subset)
@@ -101,5 +105,11 @@ if(HAKONIWA_SENSOR_ADAPTER_AIRSIM_BUILD_TESTS)
         target_compile_definitions(projectairsim_native_imu_adapter_test
             PRIVATE HAKO_AIRSIM_CONFIG_DIR="${CMAKE_CURRENT_SOURCE_DIR}/config")
         add_test(NAME projectairsim_native_imu_adapter COMMAND projectairsim_native_imu_adapter_test)
+        add_executable(projectairsim_native_mag_baro_gps_adapter_test test/projectairsim_native_mag_baro_gps_adapter_test.cpp)
+        target_link_libraries(projectairsim_native_mag_baro_gps_adapter_test
+            PRIVATE hakoniwa_sensor_adapter_airsim_native hakoniwa_sensor_adapter_airsim)
+        target_compile_definitions(projectairsim_native_mag_baro_gps_adapter_test
+            PRIVATE HAKO_AIRSIM_CONFIG_DIR="${CMAKE_CURRENT_SOURCE_DIR}/config")
+        add_test(NAME projectairsim_native_mag_baro_gps_adapter COMMAND projectairsim_native_mag_baro_gps_adapter_test)
     endif()
 endif()

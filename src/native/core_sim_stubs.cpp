@@ -1,6 +1,6 @@
 // Link stand-ins for core_sim functions that the managers (TopicManager, ServiceManager, StateManager)
-// reference but a standalone sensor never calls: robot and scene state sync, rotors, the simulation clock
-// and client authorization. They are not part of Project AirSim. Each aborts if it is ever called.
+// reference but a standalone sensor never calls: robot and scene state sync, rotors and client
+// authorization. They are not part of Project AirSim. Each aborts if it is ever called.
 #include <cstdio>
 #include <cstdlib>
 
@@ -9,7 +9,6 @@
 #include "core_sim/actuators/actuator.hpp"
 #include "core_sim/actuators/rotor.hpp"
 #include "core_sim/client_authorization.hpp"
-#include "core_sim/clock.hpp"
 #include "core_sim/scene.hpp"
 
 namespace microsoft::projectairsim {
@@ -33,5 +32,4 @@ void Robot::UpdateKinematics(const Kinematics&, TimeNano) { not_in_standalone("R
 const ActuatedRotations& Rotor::GetActuatedRotations() const { not_in_standalone("Rotor::GetActuatedRotations"); }
 const std::vector<std::reference_wrapper<Actor>>& Scene::GetActors() const { not_in_standalone("Scene::GetActors"); }
 const std::string& Scene::GetID() const { not_in_standalone("Scene::GetID"); }
-ClockBase* SimClock::Get(std::shared_ptr<ClockBase>) { not_in_standalone("SimClock::Get"); }
 }  // namespace microsoft::projectairsim

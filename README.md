@@ -5,7 +5,7 @@ This repository has two kinds of Project AirSim adapters behind the public
 
 | Kind | What runs | Sensors | Factory |
 |---|---|---|---|
-| Native | Project AirSim's own `core_sim` sensor classes, compiled unchanged from a pinned commit | IMU | `create_projectairsim_native_imu_adapter` |
+| Native | Project AirSim's own `core_sim` sensor classes, compiled unchanged from a pinned commit | IMU, GPS, barometer, magnetometer | `create_projectairsim_native_imu_adapter`, `..._gps_...`, `..._baro_...`, `..._mag_...` |
 | Reference implementation | The same model equations written again in this repository (no Project AirSim code) | IMU, GPS, barometer, magnetometer | `create_projectairsim_imu_adapter`, `..._gps_...`, `..._baro_...`, `..._mag_...` |
 
 The reference implementation needs only Boost headers. The native adapters need the pinned
@@ -297,7 +297,8 @@ nng 1.x (core_sim pins v1.11; nng 2.x changed its headers). CMake 3.19 or later.
 core_sim's sensors are created by its `Robot` inside a scene. A standalone adapter needs only the
 sensor, its Kinematics/Environment inputs and the topic/service/state managers the sensor
 registers with. The subset is the sensors, those managers, every message type, and the
-utilities they use. The managers reference a few functions of the scene, robot, clock and
+utilities they use, and core_sim's clock (a transform takes its time stamp from it when it is
+built; nothing steps it). The managers reference a few functions of the scene, robot and
 authorization classes that a standalone sensor never calls; [src/native/core_sim_stubs.cpp](src/native/core_sim_stubs.cpp)
 defines them so the subset links, and each one aborts if it is called.
 
@@ -305,6 +306,10 @@ The sensor constructors are private and name `Robot` as a friend. The adapter de
 small `microsoft::projectairsim::Robot` that only creates, loads and initializes a sensor, as
 core_sim's own unit tests do. Do not link this library into a program that also links
 core_sim's real `Robot`.
+
+Results are read from each sensor's `getOutput()` message, so they carry the message's types
+(32-bit floats). core_sim declares `GetMagnetometerSettings()` and `GetBarometerSettings()` but
+does not define them; the adapters read those settings from the config as core_sim reads them.
 
 ### Native IMU
 
@@ -330,6 +335,53 @@ without noise the output equals the truth within float precision at 250 Hz; with
 of output equals the reference implementation within float precision (same seeds, draw
 order and axes); reset repeats the sequence; time jumps and periods that
 are not whole steps are rejected.
+
+### Native magnetometer
+
+core_sim's Magnetometer computes the field itself (a dipole model at its position, rotated by the
+body orientation) and then adds its white noise and startup bias. The interface gives the field
+(`MagTruth::magnetic_field`, sensor axes). The adapter runs two core_sim Magnetometers on the
+same position and orientation, the configured one and a copy with zero `noise-sigma` and
+`noise-bias`. Their difference is exactly what core_sim adds; the sample is core_sim's
+`scale-factor` times the host's field plus that difference, on core_sim's body axes (FRD) turned
+into FLU, in nT.
+
+- Config: core_sim's `scale-factor`, `noise-sigma`, `noise-bias` (Gauss) and the adapter's
+  `update-rate-hz`. A non-empty `origin` (mount rotation) is rejected: the host applies the
+  mount pose.
+- `reset()` creates new Magnetometers, which draw the same startup bias again.
+
+### Native barometer
+
+core_sim's Barometer reads the pressure of its Environment, which core_sim computes from the
+position with its standard atmosphere. The adapter puts the Environment at
+`BaroTruth::altitude_m` above a sea-level origin and returns core_sim's pressure and pressure
+altitude. The sea-level weather of `BaroTruth` is not used and the temperature is 0, as in core_sim.
+
+- Config: core_sim's `qnh`, `pressure_factor_sigma`, `pressure-factor-tau`,
+  `uncorrelated_noise_sigma` and `update-frequency` (the sample rate, 50 Hz by default).
+- Rejected: the hyphenated `pressure-factor-sigma` and `uncorrelated-noise-sigma` (core_sim
+  reads these names with underscores and would ignore them silently), and non-zero
+  `update-latency` or `startup-delay` (core_sim parses them but does not apply them).
+
+### Native GPS
+
+core_sim's Gps reports the geodetic position of its Environment, which core_sim maps from the
+local NED position and the home point. The adapter puts the home at `GpsAdapterSetup::origin`
+and the Environment at `GpsTruth::position_nwu`; `GpsTruth::position` is not used. Velocity
+passes through. core_sim has no position or velocity noise.
+
+- Latitude, longitude and altitude come from core_sim's GPS message as 32-bit floats: near
+  latitude 35.7° and longitude 139.8°, one step is about 0.4 m north and 1.4 m east.
+- Fix type (0, 2, 3) is core_sim's, from EPH. EPH and EPV are dilutions of precision, not metres;
+  they are logged (`eph`, `epv`) and the accuracy fields are not filled.
+- Config: core_sim's `eph-*` and `epv-*` and the adapter's `update-rate-hz`.
+
+Tests ([test/projectairsim_native_mag_baro_gps_adapter_test.cpp](test/projectairsim_native_mag_baro_gps_adapter_test.cpp)):
+the magnetometer and barometer outputs equal the reference implementation within float
+precision with and without noise (20 s); the GPS latitude and longitude are within one float
+step of an independent mapping up to 1 km, and fix type and EPH/EPV equal the reference
+implementation; resets, time jumps, periods that are not whole steps and the rejected keys.
 
 ## Next validation gate
 

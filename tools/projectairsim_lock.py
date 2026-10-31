@@ -32,7 +32,7 @@ UPSTREAM = "iamaisim/ProjectAirSim"
 # core_sim sources compiled by the native adapters: the sensors, the managers they need, every
 # message (the managers reference them) and the utilities. Paths are relative to core_sim/.
 SOURCES = [
-    "src/geodetic_converter.cpp", "src/json_utils.cpp", "src/logger.cpp", "src/math_utils.cpp",
+    "src/clock.cpp", "src/geodetic_converter.cpp", "src/json_utils.cpp", "src/logger.cpp", "src/math_utils.cpp",
     "src/message/airspeed_message.cpp", "src/message/barometer_message.cpp", "src/message/battery_message.cpp",
     "src/message/camera_info_message.cpp", "src/message/clock_message.cpp",
     "src/message/collision_info_message.cpp", "src/message/distance_sensor_message.cpp",
