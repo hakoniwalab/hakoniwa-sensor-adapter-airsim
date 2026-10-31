@@ -1,0 +1,11 @@
+{
+  "id": "Barometer",
+  "type": "barometer",
+  "qnh": 1013.25,
+  "pressure_factor_sigma": 0.0,
+  "pressure-factor-tau": 3600.0,
+  "uncorrelated_noise_sigma": 0.0,
+  "update-frequency": 50,
+  "update-latency": 0.0,
+  "startup-delay": 0.0
+}

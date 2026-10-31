@@ -1,18 +1,19 @@
 # hakoniwa-sensor-adapter-airsim
 
-Standalone **Project AirSim IMU and GPS model-equation compatibility prototypes**
+Standalone **Project AirSim IMU, GPS and barometer model-equation compatibility prototypes**
 implementing the public [hakoniwa-sensor-adapter](https://github.com/hakoniwalab/hakoniwa-sensor-adapter)
-`IImuSensorAdapter` and `IGpsSensorAdapter` contracts. This is **not** a binary wrapper for Project AirSim's
+`IImuSensorAdapter`, `IGpsSensorAdapter` and `IBaroSensorAdapter` contracts. This is **not** a binary wrapper for Project AirSim's
 native `core_sim` library, and runtime equivalence is **not yet proven**.
 
 ## Scope and limitations
 
-Implemented: IMU gyro and accelerometer; NWU/FLU already-mounted truth input;
+Implemented: IMU gyro/accel, GPS and barometer compatibility models;
+IMU uses NWU/FLU already-mounted truth input;
 fixed host physics step; sample-and-hold; Project AirSim-style white noise,
 turn-on bias, bias random walk, seed/reset; capabilities; bias logs; tests.
 
 Not implemented: the original `SensorImpl`, `TopicManager`, `ServiceManager`,
-runtime or rendering, barometer, magnetometer, dynamic plugin ABI,
+runtime or rendering, magnetometer, dynamic plugin ABI,
 filter/delay/clipping, separate gyro and accel periods.
 
 Source consulted: [ProjectAirSim imu.cpp](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/src/sensors/imu.cpp),
@@ -105,6 +106,73 @@ Tests check 10Hz sample-and-hold, truthful position and velocity, EPH/EPV
 convergence, Fix 0→2D→3D, reset and independent instances, and bad inputs.
 Native Runtime output equivalence remains an explicit future gate.
 
+## Barometer model compatibility (PoC)
+
+This adapter reproduces equations from [Project AirSim barometer.cpp](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/src/sensors/barometer.cpp),
+[barometer.hpp](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/include/core_sim/sensors/barometer.hpp),
+[noise_model_utils.hpp](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/include/core_sim/sensors/noise_model_utils.hpp),
+[EarthUtils](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/include/core_sim/earth_utils.hpp)
+and [Environment::SetPosition](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/include/core_sim/environment.hpp).
+It does **not** instantiate the upstream Project AirSim class.
+
+The native-style operations occur in this order:
+
+1. Fixed standard atmosphere: native Environment computes pressure using
+   `EarthUtils::GetGeopotential/Temperature/Pressure` from altitude.
+   `BaroTruth` weather is **ignored** as native Project AirSim does.
+2. Native GaussianMarkov pressure factor:
+   `factor = float(alpha*old + (1-alpha)*normal(0,1)*sigma)`,
+   `alpha=exp(-dt/tau)`. Do **not** replace with a conventional OU
+   `sqrt(1-alpha`2)` factor: upstream does not implement that.
+3. Multiply standard pressure by `(1+factor)`, add Gaussian white noise
+   in Pa, then apply QNH: `pressure = pressure - 101325 + 100*qnh_hpa`.
+4. Derive `pressure_altitude_m` from corrected pressure using native
+   `EarthUtils::GetPressureAltitude`, not raw geometric altitude.
+   Ambient temperature is not included in native BarometerMessage:
+   `temperature_c=0` and `capabilities.temperature=false`.
+
+`BaroTruth::altitude_m` is used as the upstream environment altitude.
+Altitude datum differences (geodetic versus mean sea level) must be
+resolved by the caller when comparing models. The provided sea-level
+weather is validated but intentionally **not used**.
+
+**Configuration caveat:** upstream `core_sim/src/constant.hpp` spells
+the two parsed noise keys `pressure_factor_sigma` and
+`uncorrelated_noise_sigma` (underscores), while sample robot JSONC
+files mistakenly use `pressure-factor-sigma` and
+`uncorrelated-noise-sigma` (hyphens). For auditable comparisons, this
+adapter accepts the actual native names and **rejects** the misleading
+hyphenated noise aliases. `pressure-factor-tau`, `update-frequency`,
+`update-latency`, `startup-delay` and `qnh` retain the upstream naming.
+Examples: [ideal](config/baro-ideal.json) and [noise](config/baro-noise.json).
+
+The adapter uses `update-frequency` (50 Hz by default) as its sample
+rate; samples are held between measurements, beginning at t=0.
+The GaussianMarkov update uses `dt=1/update-frequency`. However, native
+`Barometer::Update` receives dt from the Scene, so identical scheduler
+semantics are **not yet demonstrated**. Nonzero `update-latency` or
+`startup-delay` is explicitly rejected: the native sensor class parses
+these but does not apply them in its own `Update` implementation.
+
+Without a caller-provided random seed, both independent
+`std::mt19937` streams use the upstream native default seed 42.
+When seeded by the host, the adapter intentionally derives
+per-vehicle/per-stream seeds. Normal-distribution outputs can differ
+across platforms. No Gazebo, Project AirSim Runtime, MuJoCo, network
+or background thread is required for this evaluation model.
+
+`capabilities.pressure_altitude/noise/offset/drift` are true
+(QNH adjustment qualifies as configured offset); `sea_level_weather`,
+`temperature`, `delay`, `range_clamp` and `resolution` are false.
+Diagnostic log values expose baseline pressure, multiplicative
+drift factor, white noise, and QNH separately.
+
+Tests: standard troposphere against an independent equation, 50 Hz
+sample-and-hold, QNH correction before pressure altitude, native-style
+float stochastic sequence, seed/reset and multi-instance isolation,
+and fail-closed invalid inputs. **Upstream Runtime output equivalence
+is not yet established.**
+
 ## Next validation gate
 
 1. Run native Project AirSim and this prototype on the same recorded truth.
@@ -113,7 +181,8 @@ Native Runtime output equivalence remains an explicit future gate.
 2. Decide whether to bridge the native `core_sim` implementation (with its
    management dependencies) or retain this standalone equation-compatible
    evaluation model.
-3. Add barometer and magnetometer after native-runtime equivalence is evaluated.
+3. Add magnetometer after native-runtime equivalence is evaluated;
+   retain the barometer PoC until native runtime equivalence is tested.
    PRO integration and shared-library plugin ABI remain separate work.
 
 Licensed MIT; see LICENSE.
