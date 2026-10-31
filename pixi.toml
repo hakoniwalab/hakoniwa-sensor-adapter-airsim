@@ -1,0 +1,22 @@
+[workspace]
+name = "hakoniwa-sensor-adapter-airsim"
+channels = ["conda-forge"]
+platforms = ["osx-arm64", "osx-64", "linux-64", "linux-aarch64", "win-64"]
+
+[dependencies]
+cmake = ">=3.19"
+ninja = "*"
+cxx-compiler = "*"
+python = ">=3.9"
+libboost-headers = "*"
+# core_sim's third-party libraries, as core_sim pins them (nng v1.11; nng 2.x changed its headers).
+nng = "1.11.*"
+msgpack-cxx = "*"
+eigen = "*"
+nlohmann_json = "*"
+
+[tasks]
+fetch = "python tools/projectairsim_lock.py fetch"
+configure = { cmd = "cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release -DHAKONIWA_SENSOR_ADAPTER_AIRSIM_NATIVE=ON -DHAKONIWA_SENSOR_ADAPTER_AIRSIM_BUILD_TESTS=ON -DCMAKE_PREFIX_PATH=$CONDA_PREFIX", depends-on = ["fetch"] }
+build = { cmd = "cmake --build build", depends-on = ["configure"] }
+test = { cmd = "ctest --test-dir build --output-on-failure", depends-on = ["build"] }

@@ -1,9 +1,15 @@
 # hakoniwa-sensor-adapter-airsim
 
-Standalone **Project AirSim IMU, GPS, barometer and magnetometer model-equation compatibility prototypes**
-implementing the public [hakoniwa-sensor-adapter](https://github.com/hakoniwalab/hakoniwa-sensor-adapter)
-`IImuSensorAdapter`, `IGpsSensorAdapter`, `IBaroSensorAdapter` and `IMagSensorAdapter` contracts. This is **not** a binary wrapper for Project AirSim's
-native `core_sim` library, and runtime equivalence is **not yet proven**.
+This repository has two kinds of Project AirSim adapters behind the public
+[hakoniwa-sensor-adapter](https://github.com/hakoniwalab/hakoniwa-sensor-adapter) contracts:
+
+| Kind | What runs | Sensors | Factory |
+|---|---|---|---|
+| Native | Project AirSim's own `core_sim` sensor classes, compiled unchanged from a pinned commit | IMU | `create_projectairsim_native_imu_adapter` |
+| Reference implementation | The same model equations written again in this repository (no Project AirSim code) | IMU, GPS, barometer, magnetometer | `create_projectairsim_imu_adapter`, `..._gps_...`, `..._baro_...`, `..._mag_...` |
+
+The reference implementation needs only Boost headers. The native adapters need the pinned
+`core_sim` files and core_sim's third-party libraries; see [Native adapters](#native-adapters).
 
 ## Scope and limitations
 
@@ -66,6 +72,10 @@ are intentionally derived from the seed plus vehicle name/index and sensor
 name so that two instances do not share random state. This differs from the
 native Project AirSim random sequence. Standard-library normal distributions
 can also vary between OS/compiler environments.
+
+Noise, turn-on bias and bias random walk are added on Project AirSim's body axes (FRD), as
+upstream does: `turn-on-bias` is an FRD vector, and in the FLU output its y and z, like the
+noise, have the opposite sign. Bias logs and `calibration()` report FLU values.
 
 The host applies mounting pose, vibration and NWU/FLU conversion. The input
 `specific_force` has already had gravity subtracted. The adapter does not
@@ -232,7 +242,10 @@ The adapter rejects `origin`, `ref-source` and
 `dynamic-reference-source` rather than silently ignoring native
 mounting/dipole options which cannot be honored without the full
 runtime. The host remains responsible for field generation,
-NWU/FLU conversion, and mounting pose, once only.
+NWU/FLU conversion, and mounting pose, once only. The scale factor applies to the FLU
+field; the white noise and the startup bias are drawn on Project AirSim's body axes (FRD),
+as upstream does, so `noise-sigma` and `noise-bias` are FRD vectors and their y and z
+appear with the opposite sign in the FLU output and in the logs.
 
 Capabilities report `noise=true` and `hard_iron=true` for the fixed
 additive startup bias (not a hard-iron calibration model). An
@@ -247,6 +260,76 @@ reference and bias calculation, reset, multiple-instance isolation,
 fail-closed malformed settings and invalid timestamps. **Native
 Project AirSim runtime equivalence is not established.**
 
+
+## Native adapters
+
+### Pinned Project AirSim sources
+
+This repository does not contain Project AirSim code. [third_party/projectairsim/lock.json](third_party/projectairsim/lock.json)
+records the upstream repository, one commit SHA, and the path and sha256 of every file used:
+the `core_sim` sources listed under `sources`, every file they include, and Project AirSim's
+`LICENSE` and `NOTICE.txt` (MIT). [tools/projectairsim_lock.py](tools/projectairsim_lock.py) manages them:
+
+- `fetch` downloads each file from that commit (`raw.githubusercontent.com`) into
+  `.cache/projectairsim/<commit>/` and checks its sha256. The cache is not committed.
+- `verify` checks the cache against the lock file. CMake runs it at configure time and stops
+  if a file is missing or changed.
+- `lock --clone DIR` writes a new lock file from an unmodified Project AirSim checkout. Run it
+  only to move to another upstream commit; the lock file change is then reviewed like code.
+
+Nothing from upstream is patched. Warnings in upstream code are silenced, not fixed.
+
+### Build and test
+
+With [pixi](https://pixi.sh) (conda-forge packages; macOS, Linux, Windows):
+
+```bash
+pixi run test
+```
+
+This fetches the pinned sources, configures with `-DHAKONIWA_SENSOR_ADAPTER_AIRSIM_NATIVE=ON`,
+builds, and runs all tests. Without pixi, provide the same libraries that core_sim builds with:
+Eigen 3, nlohmann/json (`json.hpp`), msgpack-cxx (header-only, compiled with `MSGPACK_NO_BOOST`) and
+nng 1.x (core_sim pins v1.11; nng 2.x changed its headers). CMake 3.19 or later.
+
+### What is compiled
+
+core_sim's sensors are created by its `Robot` inside a scene. A standalone adapter needs only the
+sensor, its Kinematics/Environment inputs and the topic/service/state managers the sensor
+registers with. The subset is the sensors, those managers, every message type, and the
+utilities they use. The managers reference a few functions of the scene, robot, clock and
+authorization classes that a standalone sensor never calls; [src/native/core_sim_stubs.cpp](src/native/core_sim_stubs.cpp)
+defines them so the subset links, and each one aborts if it is called.
+
+The sensor constructors are private and name `Robot` as a friend. The adapter defines its own
+small `microsoft::projectairsim::Robot` that only creates, loads and initializes a sensor, as
+core_sim's own unit tests do. Do not link this library into a program that also links
+core_sim's real `Robot`.
+
+### Native IMU
+
+The host gives truth in the sensor axes (FLU). The adapter sets core_sim's Kinematics with the
+identity orientation, the angular velocity in FRD, and the linear acceleration as the specific
+force plus core_sim's gravity (core_sim's Imu subtracts it again). The Environment is at
+latitude/longitude/altitude 0, where core_sim's gravity is 9.80665 m/s². The output is turned
+back into FLU.
+
+- Config: a JSON object with core_sim's `accelerometer` and `gyroscope` blocks (as in
+  [config/imu-noisy.json](config/imu-noisy.json)), plus the adapter's `update-rate-hz`. The
+  period must be a whole number of `physics_step_ns`; `Imu::Update` is called at each sample
+  with that period as its dt. Values are held between samples.
+- Noise and turn-on bias are on core_sim's body axes (FRD): the config's `turn-on-bias`
+  is an FRD vector, so its y and z appear with the opposite sign in the FLU output. The
+  reference implementation does the same.
+- core_sim seeds its generators with 1, 2, 3 in every instance; a host seed is not used.
+  `reset()` creates a new Imu, which starts the same sequence again.
+- core_sim computes in 32-bit floats.
+
+Tests ([test/projectairsim_native_imu_adapter_test.cpp](test/projectairsim_native_imu_adapter_test.cpp)):
+without noise the output equals the truth within float precision at 250 Hz; with noise, 20 s
+of output equals the reference implementation within float precision (same seeds, draw
+order and axes); reset repeats the sequence; time jumps and periods that
+are not whole steps are rejected.
 
 ## Next validation gate
 

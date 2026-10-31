@@ -106,12 +106,14 @@ void native_default_gauss_and_bias_distribution() {
         std::normal_distribution<double> noise(0.0,sigma[axis]);
         const double expected_bias_g=bias(bias_rng[axis]);
         const double expected_white_g=noise(noise_rng[axis]);
-        const double expected=sensor_nt[axis]+(expected_bias_g+expected_white_g)*100000.0;
+        // The draws are on Project AirSim's body axes (FRD): y and z change sign in FLU.
+        const double frd_to_flu[3]={1.0,-1.0,-1.0};
+        const double expected=sensor_nt[axis]+frd_to_flu[axis]*(expected_bias_g+expected_white_g)*100000.0;
         check(near(actual_nt[axis],expected,1e-5),
               "Gauss->nT startup bias + Gaussian white noise equation");
-        check(near(log[axis],expected_bias_g*100000.0,1e-6),
+        check(near(log[axis],frd_to_flu[axis]*expected_bias_g*100000.0,1e-6),
               "startup bias diagnostic matches independent RNG");
-        check(near(log[3+axis],expected_white_g*100000.0,1e-6),
+        check(near(log[3+axis],frd_to_flu[axis]*expected_white_g*100000.0,1e-6),
               "white noise diagnostic matches independent RNG");
     }
 }
