@@ -1,0 +1,613 @@
+{
+  "upstream": "iamaisim/ProjectAirSim",
+  "commit": "92032a6c4d98724d6f23b7346b8c01be955910c3",
+  "license": "MIT (LICENSE, NOTICE.txt)",
+  "sources": [
+    "core_sim/src/geodetic_converter.cpp",
+    "core_sim/src/json_utils.cpp",
+    "core_sim/src/logger.cpp",
+    "core_sim/src/math_utils.cpp",
+    "core_sim/src/message/airspeed_message.cpp",
+    "core_sim/src/message/barometer_message.cpp",
+    "core_sim/src/message/battery_message.cpp",
+    "core_sim/src/message/camera_info_message.cpp",
+    "core_sim/src/message/clock_message.cpp",
+    "core_sim/src/message/collision_info_message.cpp",
+    "core_sim/src/message/distance_sensor_message.cpp",
+    "core_sim/src/message/flight_control_rc_input_message.cpp",
+    "core_sim/src/message/flight_control_setpoint_message.cpp",
+    "core_sim/src/message/float_message.cpp",
+    "core_sim/src/message/gps_message.cpp",
+    "core_sim/src/message/image_message.cpp",
+    "core_sim/src/message/imu_message.cpp",
+    "core_sim/src/message/int8_message.cpp",
+    "core_sim/src/message/int_list_message.cpp",
+    "core_sim/src/message/joint_state_message.cpp",
+    "core_sim/src/message/kinematics_message.cpp",
+    "core_sim/src/message/lidar_message.cpp",
+    "core_sim/src/message/magnetometer_message.cpp",
+    "core_sim/src/message/message.cpp",
+    "core_sim/src/message/message_utils.cpp",
+    "core_sim/src/message/physics_state_message.cpp",
+    "core_sim/src/message/pose_message.cpp",
+    "core_sim/src/message/pose_stamped_message.cpp",
+    "core_sim/src/message/radar_detection_message.cpp",
+    "core_sim/src/message/radar_track_message.cpp",
+    "core_sim/src/message/ready_state_message.cpp",
+    "core_sim/src/message/request_message.cpp",
+    "core_sim/src/message/response_failure_message.cpp",
+    "core_sim/src/message/response_success_message.cpp",
+    "core_sim/src/message/rotor_message.cpp",
+    "core_sim/src/message/transform_message.cpp",
+    "core_sim/src/sensors/barometer.cpp",
+    "core_sim/src/sensors/gps.cpp",
+    "core_sim/src/sensors/imu.cpp",
+    "core_sim/src/sensors/magnetometer.cpp",
+    "core_sim/src/sensors/sensor.cpp",
+    "core_sim/src/service.cpp",
+    "core_sim/src/service_manager.cpp",
+    "core_sim/src/state_manager.cpp",
+    "core_sim/src/string_utils.cpp",
+    "core_sim/src/topic.cpp",
+    "core_sim/src/topic_manager.cpp",
+    "core_sim/src/transforms/transform_utils.cpp"
+  ],
+  "files": [
+    {
+      "path": "core_sim/include/core_sim/actor.hpp",
+      "sha256": "dd7d264199d0ea2c599892c8cc2e18e6f9cccd727df648a8506a68d2ca2e560a"
+    },
+    {
+      "path": "core_sim/include/core_sim/actor/robot.hpp",
+      "sha256": "1c06fd530d78a6e7fcb4b452a221e39c518e1782134e41856c622d36851b4262"
+    },
+    {
+      "path": "core_sim/include/core_sim/actuators/actuator.hpp",
+      "sha256": "dc5af7117a71928edd2d3a5cc21ac168b73bf3e9f8c8f9f79aca202b58dd80f5"
+    },
+    {
+      "path": "core_sim/include/core_sim/actuators/rotor.hpp",
+      "sha256": "b9fe0e0737649cc946ad59ff034941e1f7a18421471d15954e7a5450eef0fdfe"
+    },
+    {
+      "path": "core_sim/include/core_sim/actuators/wheel.hpp",
+      "sha256": "9f4f8d2ae78aca62c4a2438750a0a9c6863ffe73ceb6cea7bb1912ad8a2d90ee"
+    },
+    {
+      "path": "core_sim/include/core_sim/client_authorization.hpp",
+      "sha256": "94772fa224a779a24b627ac1656585370cbf7fbedbf1446e29c57d3604ac7505"
+    },
+    {
+      "path": "core_sim/include/core_sim/clock.hpp",
+      "sha256": "76e544a5b0c0343f10b1d1f0f140f143133e835ef077044a49675b593302c5f0"
+    },
+    {
+      "path": "core_sim/include/core_sim/config_json.hpp",
+      "sha256": "6d4647e33296ef726898f9774b3a8f126cff701ed180253218003e309cb8b87c"
+    },
+    {
+      "path": "core_sim/include/core_sim/earth_utils.hpp",
+      "sha256": "65291abb37d5bab82f843861c214c9f8070cf43ce34281c7eb2d1a733cc13cd3"
+    },
+    {
+      "path": "core_sim/include/core_sim/environment.hpp",
+      "sha256": "cb70702aac3ca91c2f092ab8b832bc5f0488863244033351a460f5db5ead2412"
+    },
+    {
+      "path": "core_sim/include/core_sim/error.hpp",
+      "sha256": "74bd9555edcf986763fde27f8991486ec5eeea9245839e8e9d28f7eceb090cbd"
+    },
+    {
+      "path": "core_sim/include/core_sim/first_order_filter.hpp",
+      "sha256": "19d7613de43d2dd85b1da5d3122371e216fd7e9806cf1f39df6177a2dce5dd7f"
+    },
+    {
+      "path": "core_sim/include/core_sim/geodetic_converter.hpp",
+      "sha256": "6abc6dc72fb6ef17f275e629491ddecde1d9cdea723ec5ad3e09c6ad2ff18e00"
+    },
+    {
+      "path": "core_sim/include/core_sim/joint.hpp",
+      "sha256": "0718cf7de33102a07ee034e3ad13776d654fffbb25e98c3f4dc4be45682aad7d"
+    },
+    {
+      "path": "core_sim/include/core_sim/json_utils.hpp",
+      "sha256": "4e4ba7d4b8e9538d20c9cd19f238924acff6b84986124b39bab9e646acc095e5"
+    },
+    {
+      "path": "core_sim/include/core_sim/link.hpp",
+      "sha256": "94c1f1826c78791c8d43f6e861bcee6896ac9bd11c3e65d530b342d6081d3bb9"
+    },
+    {
+      "path": "core_sim/include/core_sim/link/collision.hpp",
+      "sha256": "77d1f0c5528084e48f1a166d36bbcf12fcb371c59e6eebd9c2daf37880da718a"
+    },
+    {
+      "path": "core_sim/include/core_sim/link/geometry.hpp",
+      "sha256": "0fb17f7a9ff6e8c449019fd8505265e1761ce79160036d152b2e9f3eb40805ce"
+    },
+    {
+      "path": "core_sim/include/core_sim/link/inertial.hpp",
+      "sha256": "41a56e0c522c8aa353b5d7594f7d3663771408df8166f9a3c4afdce4e1a6874d"
+    },
+    {
+      "path": "core_sim/include/core_sim/link/material.hpp",
+      "sha256": "9a724a0837cd629c37c5611d3b25efc89036a05d42041da475980c72dc7a3404"
+    },
+    {
+      "path": "core_sim/include/core_sim/link/visual.hpp",
+      "sha256": "9b0b18399043c9b8fed96e06a7c639530c0323bd5ae0cfbe34a33257097c46c1"
+    },
+    {
+      "path": "core_sim/include/core_sim/log_level.hpp",
+      "sha256": "deb01cb840a5312e60e3706f221f2eec0a421966fe8c74078da81eb057071636"
+    },
+    {
+      "path": "core_sim/include/core_sim/logger.hpp",
+      "sha256": "9a5dd8af2144bd02f9836fd452910a647b4ab60682184c35d3ea3141edd16c91"
+    },
+    {
+      "path": "core_sim/include/core_sim/math_utils.hpp",
+      "sha256": "1856963b61be4f2fdabdcad67f9d51a212b16814b525ab861f99ffa668cf165d"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/airspeed_message.hpp",
+      "sha256": "e32b333930108ac639bdb480bcfef4a32236237b047ca350a4e0b4ba6af3f0aa"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/barometer_message.hpp",
+      "sha256": "dc72937ad9db33a8cc60bff715b2c065a340f88e73411e8fc9741eef6e94eadf"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/battery_message.hpp",
+      "sha256": "ad962232eff9d6097bc1de19b92ae4d86034703bef4d28df3037c88b521df848"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/camera_info_message.hpp",
+      "sha256": "3fb7006bf63cf0eda91a3e5551f988099e70c0fd137e1741cda1255075c1bbde"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/clock_message.hpp",
+      "sha256": "b161d781007f39fc273ea0607ec83a358ff5739d3d10bbda1e42b1128109f250"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/collision_info_message.hpp",
+      "sha256": "d6aea3ce9824b8f97cd54268416b6c12ff6c181e2297855ecc4d4c2779fe55cb"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/distance_sensor_message.hpp",
+      "sha256": "a1d2a441fa5e0fb732cf6001915e34abb08b8805141659c31d6e58f3afb99984"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/flight_control_rc_input_message.hpp",
+      "sha256": "c299d11a0aa4f71c79a67c345ca11e2971de49ac1e314927863b538a48ac3ba9"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/flight_control_setpoint_message.hpp",
+      "sha256": "20001d5d4200fff88bed04e3b784989c36f09b5203486bc76810ec9561e8a3e5"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/float_message.hpp",
+      "sha256": "b5b3bd338262cdf636f051789b164d15e8926b3cc8b3b2b6afca122459d4a1db"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/gps_message.hpp",
+      "sha256": "05f8d20b393217b567e146bc5bfca7c15fc3b143161550e7551196aac14573d3"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/image_message.hpp",
+      "sha256": "265902ae49cc24d4c26f2ca27ad658ec97146c8f4b535ebec6379f013d68c799"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/imu_message.hpp",
+      "sha256": "ac6df873aad2424b22e9d69cb34f583bb8f532973f9ab93de350beb6465c933b"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/int8_message.hpp",
+      "sha256": "227ec3617a92abb3904bb1a5666a8b8eebe5232780c0a5ffe08e977e4a1dfd35"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/int_list_message.hpp",
+      "sha256": "1379836ee30885a64895eeda33ce2700fcfcd2eeeb37d2bddcfa21445d530711"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/joint_state_message.hpp",
+      "sha256": "2394c991dcb08ad419a508dd21d46ecbfb4b0ce64abc2c9a88d266347a6f816c"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/kinematics_message.hpp",
+      "sha256": "3fbc42b062005418cac3008db4d6a26bf982a79d989439272c8b0f1e019810b0"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/lidar_message.hpp",
+      "sha256": "c869c54f99a6f87be39c03efd96dd4c1880ffe4777d0db14d57fdb60640391b2"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/magnetometer_message.hpp",
+      "sha256": "eac8211b7c694de4b26fbb7624d89b46b135ad05331a25044311bff9e392b215"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/message.hpp",
+      "sha256": "0439bd9ab4a212fd3565b0345dbadbd641c547f44ee4bbe34dfd79b0314935ea"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/physics_state_message.hpp",
+      "sha256": "e955d61c9d57f210859de054e3311af60c982cc45dd8819474378bd78ac0d8e0"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/pose_message.hpp",
+      "sha256": "65e7752da6f8747b8805f82385af45f5d72804bb7de574680780779901930953"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/pose_stamped_message.hpp",
+      "sha256": "720d2586dad2178bb738f3ea5ebe05d4a3640f969af774708ab15036fd5685c3"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/radar_detection_message.hpp",
+      "sha256": "2a481f242e49726ec1be586ce1bbdc157d42230b1eeb6c4a6b3bac5ff17a5e47"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/radar_track_message.hpp",
+      "sha256": "58cca3ec22b9953d31658e3500a743eca776ca1275d67968b80fdbf2dc90f454"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/ready_state_message.hpp",
+      "sha256": "68bbdef4128469f38f47a8a01411f37cba798d6963e0f9dc46f82aa6077b9759"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/request_message.hpp",
+      "sha256": "d29fce8d0929b098f294fa1bfce1ac114c09fbe6b913d3c1d1a4f272bc5ab0c5"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/response_failure_message.hpp",
+      "sha256": "5f85f7b3c6329afb221c9042486de3c2c985fafbffa4af74b1e4e63f2ca437c7"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/response_success_message.hpp",
+      "sha256": "a6d95c9ada6ebf33de4b8f2c228ee18f120d072e24fc4c5bd8e7cef9deca5fb4"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/rotor_message.hpp",
+      "sha256": "5ba7eb07bdc9297c6ec80a103af571db9ecd9baf5f42744b99a3eee69e4eede7"
+    },
+    {
+      "path": "core_sim/include/core_sim/message/transform_message.hpp",
+      "sha256": "3d378ace8293516676d2e9f0efc37ddecd12ce57d3730782d5f2bfe40d710de5"
+    },
+    {
+      "path": "core_sim/include/core_sim/physics_common_types.hpp",
+      "sha256": "0291fa4b0facf728c7da2737ce2bc6437d74349f09f89cd0c87c532d964eba8b"
+    },
+    {
+      "path": "core_sim/include/core_sim/physics_common_utils.hpp",
+      "sha256": "fe136223ff8987b12ac04a8714eb03d998e48c68d1b046c29f5ca3d887c52a8e"
+    },
+    {
+      "path": "core_sim/include/core_sim/runtime_components.hpp",
+      "sha256": "15fb786949e9918f8bf16c4328eef5d9c5f6007a934077d8d1a5d8c2dcf419a6"
+    },
+    {
+      "path": "core_sim/include/core_sim/scene.hpp",
+      "sha256": "b9c6c90d45fbb92c79845f0e95d8dabb9693d9030916043194557e1d2f9e5911"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/airspeed.hpp",
+      "sha256": "7bce7976a8256a952f60dc2d22f490f4b96124b6efa28cb12ca4b484acb7860f"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/barometer.hpp",
+      "sha256": "9c61ade4db384d57f97aff02657a2112d7a867006b9407757e0acc35021ec141"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/battery.hpp",
+      "sha256": "215d378c3d31c5992bb5d223acce0fb5a6a02e741869cce949d9d335aa134dfd"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/camera.hpp",
+      "sha256": "a2e2404b4dcf0ebee8e8929d4eea3b3ba7662ec0819624659a98f1b177f0ef92"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/distance_sensor.hpp",
+      "sha256": "5e9a89fbe521cbd0b21adeeea22bc47de8b1b5308328dd2d57ce5a4bfb2d24d0"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/gps.hpp",
+      "sha256": "74f732a5fdba8c2e43a01eeb08c63d3a342de941216b56c89d2658365802f93c"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/imu.hpp",
+      "sha256": "61b0541c1220aa0606e6eb86e9cb2593e258e226145c12545ac669c3460d1a7e"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/lidar.hpp",
+      "sha256": "332dbebd9536102f213da6632073a960630249b077fae46a918de850249b66cf"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/magnetometer.hpp",
+      "sha256": "5108fe25be3c4b845943479045b5bfb5c8d5f26c3c0e06ec677359e7e12ffcd5"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/noise_model_utils.hpp",
+      "sha256": "b28cde97331b22dba6b070a714a6b80d1df6e6f7169536d9df92fe65ee780b9c"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/radar.hpp",
+      "sha256": "2f1c774d3c74539ab74c940987b01f9d3f5efca47dabc91e9b5e3f65dc276cf2"
+    },
+    {
+      "path": "core_sim/include/core_sim/sensors/sensor.hpp",
+      "sha256": "9baef3be43d35e454fd1ab82f21a82b50a366b0c80ca4663ad8049704f0a5009"
+    },
+    {
+      "path": "core_sim/include/core_sim/service.hpp",
+      "sha256": "634de7e5889ddb897ec3a31b9e28d3b5c9992253020dd76ad801994866fb8a58"
+    },
+    {
+      "path": "core_sim/include/core_sim/service_manager.hpp",
+      "sha256": "935c10e36f1da97d773d1b48c1e80238943bfc6bea826dd66a8c83072e44b259"
+    },
+    {
+      "path": "core_sim/include/core_sim/service_method.hpp",
+      "sha256": "f3b81d05c322036dee23cfb1dbf939e8a1af915c37b539ff8893a5796d5053e8"
+    },
+    {
+      "path": "core_sim/include/core_sim/topic.hpp",
+      "sha256": "55b16558e3258a88bb1a202071e97ca8d113eb8f622348facbcf984f0ece2669"
+    },
+    {
+      "path": "core_sim/include/core_sim/trajectory.hpp",
+      "sha256": "2254c750def84777a1e7a5d37dba28160da2f145ad136d906aee509161e4aeea"
+    },
+    {
+      "path": "core_sim/include/core_sim/transforms/transform.hpp",
+      "sha256": "bcea38e388ed8c447cfb92b61adf5191d55ee0401e99f8e1afaec16a35b45191"
+    },
+    {
+      "path": "core_sim/include/core_sim/transforms/transform_tree.hpp",
+      "sha256": "8a82e14b4945c4c3fa17b66b5e2ea4a0d5a21dbf6624542339f9ad777151d444"
+    },
+    {
+      "path": "core_sim/include/core_sim/transforms/transform_utils.hpp",
+      "sha256": "56c41ae9295953930fd2428474aca563f18dd2141f583c169d47e85db931cb15"
+    },
+    {
+      "path": "core_sim/src/component.hpp",
+      "sha256": "cf84b1bc1d1156eb3a676a4686bcbe27a6e52bf7290cea5fad84edbd1dca67c5"
+    },
+    {
+      "path": "core_sim/src/constant.hpp",
+      "sha256": "56831ede96d182f0a3fd7a85a20646fc6d61d6b8be2f1e68eba15bc201ae227c"
+    },
+    {
+      "path": "core_sim/src/dispatcher.hpp",
+      "sha256": "50ae8b70d281266b33edd18fc7d2b3c4ed06332028f2a617dcc5c9c8f62c0f65"
+    },
+    {
+      "path": "core_sim/src/geodetic_converter.cpp",
+      "sha256": "21df9407b482a000483e96b8b2c271bce4be265175bae1401ff08f07280f7eec"
+    },
+    {
+      "path": "core_sim/src/json_utils.cpp",
+      "sha256": "e148fefad57f26b9877f4afff34744e3bde5940f304c91870a212ff54167d923"
+    },
+    {
+      "path": "core_sim/src/logger.cpp",
+      "sha256": "803943e1e05d0ed58c21d5642edd1c15abe756d6590bb5149a12244df9ab6e54"
+    },
+    {
+      "path": "core_sim/src/math_utils.cpp",
+      "sha256": "6e675a1b8c33e8884fa432bcdf77a6c4cdf73a4a8be5b6f09aeeb08dfa3703de"
+    },
+    {
+      "path": "core_sim/src/message/airspeed_message.cpp",
+      "sha256": "572a2e7754cc707b28c9b86107817fd07b614b0c82a6d40776085426dd7285d3"
+    },
+    {
+      "path": "core_sim/src/message/barometer_message.cpp",
+      "sha256": "f37ece02e249fe0d7e8d5a326a652ce5a910af9225c74568e42aa6cceb5f7d4d"
+    },
+    {
+      "path": "core_sim/src/message/battery_message.cpp",
+      "sha256": "fdb90ce63c32811475998012a60d5b974c2bde0d7034c7364ce119241253a1ab"
+    },
+    {
+      "path": "core_sim/src/message/camera_info_message.cpp",
+      "sha256": "511375cd75396d38a848135b816db61989512dbcf55aefa443945a91396e46cc"
+    },
+    {
+      "path": "core_sim/src/message/clock_message.cpp",
+      "sha256": "7eaaeca9dc4bc3c55b86250325414b15dd64e78aaac45a8120e001a45ffb73a7"
+    },
+    {
+      "path": "core_sim/src/message/collision_info_message.cpp",
+      "sha256": "41ac0ad1ac7db7ee66bd3c93b709feea045aafb5a7812e969ad3cf805398ec99"
+    },
+    {
+      "path": "core_sim/src/message/common_utils.hpp",
+      "sha256": "0d2dc34b9b6b6458ca530ee66ad5d7ea45a48862f65bd06ae8deb57fde7fd7e9"
+    },
+    {
+      "path": "core_sim/src/message/distance_sensor_message.cpp",
+      "sha256": "f4ade4bbbbb52e3353b080c63ae4305c71e334c1a5bac7d2e5c2f624b829ba1e"
+    },
+    {
+      "path": "core_sim/src/message/flight_control_rc_input_message.cpp",
+      "sha256": "360ca87113a3c5d09bc7ce4f6b7180c5545e0f724fb1aba407d484cf84a3a02b"
+    },
+    {
+      "path": "core_sim/src/message/flight_control_setpoint_message.cpp",
+      "sha256": "29941a3a75ad073ddf5c62078b09426338b9870cad50959f10bb176ba4c5f57b"
+    },
+    {
+      "path": "core_sim/src/message/float_message.cpp",
+      "sha256": "365966d247606418981041ca507812aabdf3531077fa59fe934232ac3855a67e"
+    },
+    {
+      "path": "core_sim/src/message/gps_message.cpp",
+      "sha256": "4cd83ea4406e97f639bfb49489a4190417e0770cb61167bd8afd4c810dfbc6a0"
+    },
+    {
+      "path": "core_sim/src/message/image_message.cpp",
+      "sha256": "d3e180bdafd3250e3864b8b51b881bc9a09d18170b68a6a0cb10cad96a7195e8"
+    },
+    {
+      "path": "core_sim/src/message/imu_message.cpp",
+      "sha256": "ba01da183870477c3de6f9b0d22c0ff44ad4ae9e1ec4965c0a4eff18c183d30c"
+    },
+    {
+      "path": "core_sim/src/message/int8_message.cpp",
+      "sha256": "f22f5ca53f71f55eb89b4cdba530c483ac49c52db4bdb27fc32f06f228a1d32b"
+    },
+    {
+      "path": "core_sim/src/message/int_list_message.cpp",
+      "sha256": "e4274661e45540e22f67ec3bfa339f3881ace586310b4c54eb87cbbe6add5c14"
+    },
+    {
+      "path": "core_sim/src/message/joint_state_message.cpp",
+      "sha256": "37dbacc58decef89bfad655407c4fb21cc563e89415d493cad2793fed4ad44a3"
+    },
+    {
+      "path": "core_sim/src/message/kinematics_message.cpp",
+      "sha256": "b3ae4541ef8323f6680dfb1ffbb242a489e3a244da24b3dda6ff58d6b5bf66de"
+    },
+    {
+      "path": "core_sim/src/message/lidar_message.cpp",
+      "sha256": "50f59d49d605ad5df915a78fa466f4319babafdbaa58bf274ea0537b9d7713ae"
+    },
+    {
+      "path": "core_sim/src/message/magnetometer_message.cpp",
+      "sha256": "771b0db48c91b79f0db7a494b82678d12e32015b0b66b921a57469713a488e35"
+    },
+    {
+      "path": "core_sim/src/message/message.cpp",
+      "sha256": "496512c86cd9f684b7b76fca917a22838092e44e5eab8ee9774be8367dfc2633"
+    },
+    {
+      "path": "core_sim/src/message/message_impl.hpp",
+      "sha256": "6b18233287180222b5a260e15cad73205de0103888221a9ba2b8b779639c8d55"
+    },
+    {
+      "path": "core_sim/src/message/message_utils.cpp",
+      "sha256": "17e9c3ec2ad26aac240e06d5549b164023a373821ac380fd67fe0e1b7a79ba40"
+    },
+    {
+      "path": "core_sim/src/message/message_utils.hpp",
+      "sha256": "59e5508856bdbf18f8b8084bb2d8d89247ae899baaa037be9a15c4094e666f26"
+    },
+    {
+      "path": "core_sim/src/message/physics_state_message.cpp",
+      "sha256": "52bc6fa1737e6c157980996e93104d3ff798bc988bbea82a602f2abea2929a5a"
+    },
+    {
+      "path": "core_sim/src/message/pose_message.cpp",
+      "sha256": "c7eadf673b1d8270c05c1aefc051fb3ba8a51da9c9a5b1df3cbaec47471604d7"
+    },
+    {
+      "path": "core_sim/src/message/pose_stamped_message.cpp",
+      "sha256": "13d323b359bf5f872044c0cbf27b998338f7488e30e35ce4054d4f7261f7ed2e"
+    },
+    {
+      "path": "core_sim/src/message/radar_detection_message.cpp",
+      "sha256": "886579ddf815b85b5deb143f822552848d7b3e8dfa9ec546d9e6ddafa79fdcd8"
+    },
+    {
+      "path": "core_sim/src/message/radar_track_message.cpp",
+      "sha256": "7d0057b0c4c5202c08660b71570db27bca86094d8448d78c60763ae60c7e971d"
+    },
+    {
+      "path": "core_sim/src/message/ready_state_message.cpp",
+      "sha256": "4cd447b0fa5d294d08dc0841c0e72480f2ee788adb31446d3d1f56dc891518f3"
+    },
+    {
+      "path": "core_sim/src/message/request_message.cpp",
+      "sha256": "90460b1dfb2281bd883fec5027c50e3f92deb1c813289c34ecc35e99f11c4157"
+    },
+    {
+      "path": "core_sim/src/message/response_failure_message.cpp",
+      "sha256": "b53bdeeb7e3e1ed5b8d1af0c31eaf8198c36aebd11fcc48340d3a00f7464cc93"
+    },
+    {
+      "path": "core_sim/src/message/response_success_message.cpp",
+      "sha256": "84bd755556eea3a00aded6f7f11cfa0302ee1990c087c397ccab2fd11fc6ff34"
+    },
+    {
+      "path": "core_sim/src/message/rotor_message.cpp",
+      "sha256": "978ef732b88ddc1aaaf441319a9fb67234583d7c684aa4a662287ebb78c5258f"
+    },
+    {
+      "path": "core_sim/src/message/transform_message.cpp",
+      "sha256": "cd075cd057c8557b2ac38f300cc0197e3252926087d841c16e63389b05428cbf"
+    },
+    {
+      "path": "core_sim/src/sensors/barometer.cpp",
+      "sha256": "23b8d662d01f9e90021702af5f914254349299eab58903ce3436fd7b0f6b24c3"
+    },
+    {
+      "path": "core_sim/src/sensors/gps.cpp",
+      "sha256": "ef62fb0c33230738e5500573a78df93bc0f2a091d6d340c330e535622d7a3619"
+    },
+    {
+      "path": "core_sim/src/sensors/imu.cpp",
+      "sha256": "3a667bbe72db02e6d61f51ff824da7a9b8ab7f12ddc91ca4a7258c83de7f8ed1"
+    },
+    {
+      "path": "core_sim/src/sensors/magnetometer.cpp",
+      "sha256": "f4ebb11439d2e0f0029da57adc808f34294fcf9cb85a47c731a4d2e6028f517b"
+    },
+    {
+      "path": "core_sim/src/sensors/sensor.cpp",
+      "sha256": "9bcd82a44c397bd3c86f9bd1e05e4fb7b9d62162e836526f98a98d3ade4669cb"
+    },
+    {
+      "path": "core_sim/src/sensors/sensor_impl.hpp",
+      "sha256": "0fb5aa3c169cb26f13beec9bc9716e3995edff8d87087e2085c65bf1a6e1906a"
+    },
+    {
+      "path": "core_sim/src/service.cpp",
+      "sha256": "20acb2219e710d432200726d40c1936a70855783c401df1b51ac494755ac4dd5"
+    },
+    {
+      "path": "core_sim/src/service_manager.cpp",
+      "sha256": "cbd5bd1956b77fba4c3724456497f746bf6f222c938a3aeea8d6887074617f21"
+    },
+    {
+      "path": "core_sim/src/state_manager.cpp",
+      "sha256": "cbe23b86f260e262631ee4f1dfbdf843d873a1079a5d8e0699b3c8a04beebfd3"
+    },
+    {
+      "path": "core_sim/src/state_manager.hpp",
+      "sha256": "1a7d4fa27a7763d3fc2ac80c524e09fbd065815306f03e2602bee73182554143"
+    },
+    {
+      "path": "core_sim/src/string_utils.cpp",
+      "sha256": "725a4fae400aeb6211504dcac8e5f335205cefd6bebf04091d9b5098fcb8082f"
+    },
+    {
+      "path": "core_sim/src/string_utils.hpp",
+      "sha256": "3895441746f6fbae357b7f01db02671070cdc0d5d74ae0767b75ca8197985709"
+    },
+    {
+      "path": "core_sim/src/topic.cpp",
+      "sha256": "3ab6491384e1fe5c7a363a723e6138d73a1d24c47efe641dba749a476853a0d9"
+    },
+    {
+      "path": "core_sim/src/topic_manager.cpp",
+      "sha256": "1428bdc4d107c3ccf3e82192e78d8f03e7588724857b95935f6107e658ed3830"
+    },
+    {
+      "path": "core_sim/src/topic_manager.hpp",
+      "sha256": "473eac0278c2637ca6364b07c60f43a0101a74a3d41e23b9334306c71235fd78"
+    },
+    {
+      "path": "core_sim/src/transforms/transform_utils.cpp",
+      "sha256": "8d73d9f0f28bb4c6158ea052e2f81730f2e533247609b8b8af7d3df0b5034ec7"
+    },
+    {
+      "path": "LICENSE",
+      "sha256": "c2cfccb812fe482101a8f04597dfc5a9991a6b2748266c47ac91b6a5aae15383"
+    },
+    {
+      "path": "NOTICE.txt",
+      "sha256": "a164709eea91ced82bc2fc0c44f152251dfeda343d0c86393e66ece64ae32b8d"
+    }
+  ]
+}
