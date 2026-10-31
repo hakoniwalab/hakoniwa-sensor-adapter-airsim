@@ -1,0 +1,6 @@
+{
+  "type": "barometer",
+  "pressure-factor-sigma": 0.001825,
+  "uncorrelated-noise-sigma": 2.7,
+  "update-frequency": 50
+}

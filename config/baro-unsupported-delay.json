@@ -1,0 +1,6 @@
+{
+  "type": "barometer",
+  "update-latency": 0.1,
+  "startup-delay": 0.0,
+  "update-frequency": 50
+}
