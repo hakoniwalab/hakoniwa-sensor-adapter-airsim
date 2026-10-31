@@ -1,8 +1,8 @@
 # hakoniwa-sensor-adapter-airsim
 
-A small, standalone **Project AirSim IMU error-model compatibility prototype**
+Standalone **Project AirSim IMU and GPS model-equation compatibility prototypes**
 implementing the public [hakoniwa-sensor-adapter](https://github.com/hakoniwalab/hakoniwa-sensor-adapter)
-`IImuSensorAdapter` contract. This is **not** a binary wrapper for Project AirSim's
+`IImuSensorAdapter` and `IGpsSensorAdapter` contracts. This is **not** a binary wrapper for Project AirSim's
 native `core_sim` library, and runtime equivalence is **not yet proven**.
 
 ## Scope and limitations
@@ -12,7 +12,7 @@ fixed host physics step; sample-and-hold; Project AirSim-style white noise,
 turn-on bias, bias random walk, seed/reset; capabilities; bias logs; tests.
 
 Not implemented: the original `SensorImpl`, `TopicManager`, `ServiceManager`,
-runtime or rendering, GPS, barometer, magnetometer, dynamic plugin ABI,
+runtime or rendering, barometer, magnetometer, dynamic plugin ABI,
 filter/delay/clipping, separate gyro and accel periods.
 
 Source consulted: [ProjectAirSim imu.cpp](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/src/sensors/imu.cpp),
@@ -70,6 +70,41 @@ The host applies mounting pose, vibration and NWU/FLU conversion. The input
 `specific_force` has already had gravity subtracted. The adapter does not
 apply gravity again.
 
+## GPS model compatibility (PoC)
+
+The native [Project AirSim GPS](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/src/sensors/gps.cpp)
+passes geodetic **truth** and linear velocity through unchanged, **without position
+or velocity noise**. It changes EPH/EPV using its
+[FirstOrderFilter<float>](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/include/core_sim/first_order_filter.hpp)
+and derives Fix type (no fix / 2D / 3D) from EPH. Upstream describes EPH
+and EPV as **dimensionless dilution-of-precision**, not metric uncertainty.
+
+The new `create_projectairsim_gps_adapter()` implements `IGpsSensorAdapter`.
+It accepts a **single GPS sensor JSON object**, e.g. [`gps-default.json`](config/gps-default.json),
+using the upstream keys `eph-time-constant`, `epv-time-constant`,
+`eph-initial`, `epv-initial`, `eph-final`, `epv-final`,
+`eph-min-3d`, `eph-min-2d`.
+
+- The **adapter-only** `update-rate-hz` controls measurement frequency and
+  must be aligned with the host's fixed `physics_step_ns`. This adapter
+  advances the filter once at t=0 with dt equal to the sensor interval.
+  Native scene scheduler and first-sample dt equivalence are **not verified**.
+- Coordinates (WGS-84) and NWU velocity are forwarded without noise at each
+  measurement; values are held between samples. `fix_type` follows EPH.
+- Public `horizontal_accuracy_m`, `vertical_accuracy_m`, `speed_accuracy_mps`
+  are **not filled**, since EPH/EPV are not metres. Raw EPH and EPV instead
+  appear in diagnostic `log_values()` columns with unit `dimensionless`.
+- The native model offers partial Fix state, but does not provide satellite
+  count, metre-valued accuracy or course. `receiver_status=false` therefore
+  reflects the complete public API capability; no values are invented.
+- No runtime, physics engine, topic/service managers, thread or networking
+  are required. This is a mathematical counterpart, **not** the original
+  Project AirSim `core_sim::Gps` implementation.
+
+Tests check 10Hz sample-and-hold, truthful position and velocity, EPH/EPV
+convergence, Fix 0→2D→3D, reset and independent instances, and bad inputs.
+Native Runtime output equivalence remains an explicit future gate.
+
 ## Next validation gate
 
 1. Run native Project AirSim and this prototype on the same recorded truth.
@@ -78,7 +113,7 @@ apply gravity again.
 2. Decide whether to bridge the native `core_sim` implementation (with its
    management dependencies) or retain this standalone equation-compatible
    evaluation model.
-3. Add GPS, barometer and magnetometer only after IMU equivalence is evaluated.
+3. Add barometer and magnetometer after native-runtime equivalence is evaluated.
    PRO integration and shared-library plugin ABI remain separate work.
 
 Licensed MIT; see LICENSE.

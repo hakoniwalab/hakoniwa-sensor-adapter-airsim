@@ -1,0 +1,13 @@
+{
+  "id": "GPS",
+  "type": "gps",
+  "update-rate-hz": 10,
+  "eph-time-constant": 0.9,
+  "epv-time-constant": 0.9,
+  "eph-initial": 100.0,
+  "epv-initial": 100.0,
+  "eph-final": 0.1,
+  "epv-final": 0.1,
+  "eph-min-3d": 3.0,
+  "eph-min-2d": 4.0
+}
