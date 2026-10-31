@@ -1,19 +1,19 @@
 # hakoniwa-sensor-adapter-airsim
 
-Standalone **Project AirSim IMU, GPS and barometer model-equation compatibility prototypes**
+Standalone **Project AirSim IMU, GPS, barometer and magnetometer model-equation compatibility prototypes**
 implementing the public [hakoniwa-sensor-adapter](https://github.com/hakoniwalab/hakoniwa-sensor-adapter)
-`IImuSensorAdapter`, `IGpsSensorAdapter` and `IBaroSensorAdapter` contracts. This is **not** a binary wrapper for Project AirSim's
+`IImuSensorAdapter`, `IGpsSensorAdapter`, `IBaroSensorAdapter` and `IMagSensorAdapter` contracts. This is **not** a binary wrapper for Project AirSim's
 native `core_sim` library, and runtime equivalence is **not yet proven**.
 
 ## Scope and limitations
 
-Implemented: IMU gyro/accel, GPS and barometer compatibility models;
+Implemented: IMU gyro/accel, GPS, barometer and magnetometer compatibility models;
 IMU uses NWU/FLU already-mounted truth input;
 fixed host physics step; sample-and-hold; Project AirSim-style white noise,
 turn-on bias, bias random walk, seed/reset; capabilities; bias logs; tests.
 
 Not implemented: the original `SensorImpl`, `TopicManager`, `ServiceManager`,
-runtime or rendering, magnetometer, dynamic plugin ABI,
+runtime or rendering, dynamic plugin ABI,
 filter/delay/clipping, separate gyro and accel periods.
 
 Source consulted: [ProjectAirSim imu.cpp](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/src/sensors/imu.cpp),
@@ -173,6 +173,81 @@ float stochastic sequence, seed/reset and multi-instance isolation,
 and fail-closed invalid inputs. **Upstream Runtime output equivalence
 is not yet established.**
 
+## Magnetometer model compatibility (PoC)
+
+The magnetometer adapter implements the public
+[IMagSensorAdapter](https://github.com/hakoniwalab/hakoniwa-sensor-adapter/blob/main/include/hakoniwa/sensor_adapter/mag_sensor_adapter.hpp)
+interface, reproducing the *error-model equations* from
+[Project AirSim magnetometer.cpp](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/src/sensors/magnetometer.cpp),
+[magnetometer.hpp](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/include/core_sim/sensors/magnetometer.hpp)
+and [noise_model_utils.hpp](https://github.com/iamaisim/ProjectAirSim/blob/main/core_sim/include/core_sim/sensors/noise_model_utils.hpp).
+
+**Deliberate separation of physics truth and sensor errors.** Native
+Project AirSim normally uses EarthUtils' low-order geomagnetic dipole
+field (or a compiled-in constant field) and rotates it by the combined
+body/mounting pose, then scales it and adds noise. In this controlled
+comparison adapter, the host supplies the field **already rotated
+into the sensor FLU axes**, as `MagTruth::magnetic_field` in **nT**.
+No magnetic world-field computation or rotation is done here.
+Consequently this is **NOT** the original Project AirSim field model
+and cannot be used as evidence of native EarthUtils equivalence.
+
+The native magnetometer reports **Gauss**, whereas the public Hakoniwa
+adapter reports **nanotesla** (1 G = 100,000 nT). The model uses
+`scale-factor` (scalar), `noise-sigma` and `noise-bias`, with the latter
+two configured as strings of three numbers in **Gauss**.
+Examples: [ideal](config/mag-ideal.json),
+[scaled](config/mag-scaled.json),
+[noisy](config/mag-noise.json).
+
+At initialization, the original native implementation calls
+`RandomVectorGaussianR(-noise_bias,noise_bias).next()` to draw a
+**constant per-axis startup bias**, then adds new white Gaussian noise
+every measurement. This is a Gaussian with **mean = -noise_bias** and
+**standard deviation = noise_bias**, not a uniform distribution and
+not a zero-mean Gaussian. This unusual behavior is deliberately
+preserved, not normalized away.
+
+The observation equation at each sample is:
+
+`sample_nT = 100000 * (scale_factor * (truth_nT / 100000) +
+                      N(0, noise_sigma_G) + startup_bias_G)`
+
+Each axis has a separate `std::mt19937` generator. Without a host seed
+the white-noise and startup-bias generators each start with seeds
+1/2/3, as in the native `RandomVectorGaussianR` implementation.
+If `has_random_seed=true` the host seed and sensor/vehicle identity
+are deliberately mixed into **independent per-instance streams**.
+Such seeded streams are a Hakoniwa extension, not a native behavior.
+As with other adapters, Gaussian samples can differ between C++
+standard libraries; do not claim cross-platform bit-for-bit matches.
+
+`update-rate-hz` is an **adapter-only** sampling control (100Hz in
+the example configs); native Project AirSim updates when its Scene
+scheduler calls `Magnetometer::Update`, rather than following this
+standalone config key. The interface's 0,dt,2dt,... monotonic rule,
+sample-and-hold, `reset()` and diagnostic logs apply.
+
+The adapter rejects `origin`, `ref-source` and
+`dynamic-reference-source` rather than silently ignoring native
+mounting/dipole options which cannot be honored without the full
+runtime. The host remains responsible for field generation,
+NWU/FLU conversion, and mounting pose, once only.
+
+Capabilities report `noise=true` and `hard_iron=true` for the fixed
+additive startup bias (not a hard-iron calibration model). An
+isotropic `scale-factor` does **not** implement soft-iron matrix
+distortion, so `soft_iron=false`. The native magnetometer does not
+evolve the bias after initialization, so `drift=false`; delay,
+resolution and saturation are also unsupported.
+
+Contract tests cover 100Hz sampling, independently supplied and
+pre-rotated magnetic truth, scale in Gauss, independent normal RNG
+reference and bias calculation, reset, multiple-instance isolation,
+fail-closed malformed settings and invalid timestamps. **Native
+Project AirSim runtime equivalence is not established.**
+
+
 ## Next validation gate
 
 1. Run native Project AirSim and this prototype on the same recorded truth.
@@ -181,8 +256,8 @@ is not yet established.**
 2. Decide whether to bridge the native `core_sim` implementation (with its
    management dependencies) or retain this standalone equation-compatible
    evaluation model.
-3. Add magnetometer after native-runtime equivalence is evaluated;
-   retain the barometer PoC until native runtime equivalence is tested.
+3. Evaluate IMU, GPS, barometer and magnetometer against the actual native
+   Project AirSim Runtime before claiming native equivalence.
    PRO integration and shared-library plugin ABI remain separate work.
 
 Licensed MIT; see LICENSE.
