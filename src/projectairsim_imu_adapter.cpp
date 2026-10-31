@@ -99,6 +99,10 @@ Config load_config(const ImuAdapterSetup& setup)
 Vector3 add(const Vector3& a, const Vector3& b) { return {a.x + b.x, a.y + b.y, a.z + b.z}; }
 Vector3 scale(const Vector3& a, double k) { return {a.x * k, a.y * k, a.z * k}; }
 bool finite(const Vector3& v) { return std::isfinite(v.x) && std::isfinite(v.y) && std::isfinite(v.z); }
+// Project AirSim adds the noise and the turn-on bias on its body axes (FRD), so the config's
+// turn-on-bias and every draw are FRD vectors. The interface's sensor axes are FLU: y and z
+// change sign (the same both ways).
+Vector3 frd_to_flu(const Vector3& v) { return {v.x, -v.y, -v.z}; }
 
 // Project AirSim's RandomVectorGaussianR uses mt19937 seeds 1,2,3 for
 // x,y,z, and reuses each stream for white noise and both bias increments.
@@ -159,12 +163,12 @@ public:
                 const double dt = std::max(cfg_.period_ns / 1e9, cfg_.min_sample_time);
                 const double root_dt = static_cast<double>(static_cast<float>(std::sqrt(dt)));
                 const Vector3 acc_white = gaussian_.next();
-                const Vector3 acc_measure = add(add(truth.specific_force, scale(acc_white, cfg_.acc.random_walk / root_dt)), acc_bias_);
+                const Vector3 acc_measure = add(truth.specific_force, frd_to_flu(add(scale(acc_white, cfg_.acc.random_walk / root_dt), acc_bias_)));
                 const Vector3 acc_drift = gaussian_.next();
                 acc_bias_ = add(acc_bias_, scale(acc_drift, (cfg_.acc.bias_stability / std::sqrt(cfg_.acc.tau)) * root_dt));
 
                 const Vector3 gyro_white = gaussian_.next();
-                const Vector3 gyro_measure = add(add(truth.angular_velocity, scale(gyro_white, cfg_.gyro.random_walk / root_dt)), gyro_bias_);
+                const Vector3 gyro_measure = add(truth.angular_velocity, frd_to_flu(add(scale(gyro_white, cfg_.gyro.random_walk / root_dt), gyro_bias_)));
                 const Vector3 gyro_drift = gaussian_.next();
                 gyro_bias_ = add(gyro_bias_, scale(gyro_drift, (cfg_.gyro.bias_stability / std::sqrt(cfg_.gyro.tau)) * root_dt));
 
@@ -205,7 +209,7 @@ public:
 
     bool calibration(ImuCalibration& out) const override
     {
-        out.accel_zero_g_offset = cfg_.acc.turn_on_bias;
+        out.accel_zero_g_offset = frd_to_flu(cfg_.acc.turn_on_bias);
         out.accel_scale = {1, 1, 1};
         return true;
     }
@@ -213,7 +217,9 @@ public:
     const std::vector<LogColumn>& log_columns() const override { return columns_; }
     void log_values(std::vector<double>& values) const override
     {
-        values = {acc_bias_.x, acc_bias_.y, acc_bias_.z, gyro_bias_.x, gyro_bias_.y, gyro_bias_.z};
+        // Logged in the sensor axes (FLU), like the samples.
+        const Vector3 acc = frd_to_flu(acc_bias_), gyro = frd_to_flu(gyro_bias_);
+        values = {acc.x, acc.y, acc.z, gyro.x, gyro.y, gyro.z};
     }
 private:
     void reset_state()
@@ -228,7 +234,7 @@ private:
     Config cfg_;
     std::uint64_t next_time_ns_{0};
     ImuSample last_{};
-    Vector3 acc_bias_{}, gyro_bias_{};
+    Vector3 acc_bias_{}, gyro_bias_{};  // FRD, as Project AirSim keeps them
     Gaussian3 gaussian_{};
     std::vector<LogColumn> columns_;
 };

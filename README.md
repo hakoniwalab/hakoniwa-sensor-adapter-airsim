@@ -73,6 +73,10 @@ name so that two instances do not share random state. This differs from the
 native Project AirSim random sequence. Standard-library normal distributions
 can also vary between OS/compiler environments.
 
+Noise, turn-on bias and bias random walk are added on Project AirSim's body axes (FRD), as
+upstream does: `turn-on-bias` is an FRD vector, and in the FLU output its y and z, like the
+noise, have the opposite sign. Bias logs and `calibration()` report FLU values.
+
 The host applies mounting pose, vibration and NWU/FLU conversion. The input
 `specific_force` has already had gravity subtracted. The adapter does not
 apply gravity again.
@@ -238,7 +242,10 @@ The adapter rejects `origin`, `ref-source` and
 `dynamic-reference-source` rather than silently ignoring native
 mounting/dipole options which cannot be honored without the full
 runtime. The host remains responsible for field generation,
-NWU/FLU conversion, and mounting pose, once only.
+NWU/FLU conversion, and mounting pose, once only. The scale factor applies to the FLU
+field; the white noise and the startup bias are drawn on Project AirSim's body axes (FRD),
+as upstream does, so `noise-sigma` and `noise-bias` are FRD vectors and their y and z
+appear with the opposite sign in the FLU output and in the logs.
 
 Capabilities report `noise=true` and `hard_iron=true` for the fixed
 additive startup bias (not a hard-iron calibration model). An
@@ -311,17 +318,17 @@ back into FLU.
   [config/imu-noisy.json](config/imu-noisy.json)), plus the adapter's `update-rate-hz`. The
   period must be a whole number of `physics_step_ns`; `Imu::Update` is called at each sample
   with that period as its dt. Values are held between samples.
-- Noise and turn-on bias are on core_sim's body axes (FRD). Seen in FLU, their y and z
-  components have the opposite sign to the same config in the reference implementation,
-  which adds them on the FLU axes.
+- Noise and turn-on bias are on core_sim's body axes (FRD): the config's `turn-on-bias`
+  is an FRD vector, so its y and z appear with the opposite sign in the FLU output. The
+  reference implementation does the same.
 - core_sim seeds its generators with 1, 2, 3 in every instance; a host seed is not used.
   `reset()` creates a new Imu, which starts the same sequence again.
 - core_sim computes in 32-bit floats.
 
 Tests ([test/projectairsim_native_imu_adapter_test.cpp](test/projectairsim_native_imu_adapter_test.cpp)):
 without noise the output equals the truth within float precision at 250 Hz; with noise, 20 s
-of output equals the reference implementation within float precision once y and z are
-mirrored (same seeds and draw order); reset repeats the sequence; time jumps and periods that
+of output equals the reference implementation within float precision (same seeds, draw
+order and axes); reset repeats the sequence; time jumps and periods that
 are not whole steps are rejected.
 
 ## Next validation gate

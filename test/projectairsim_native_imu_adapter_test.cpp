@@ -81,30 +81,24 @@ void native_and_reference_agree()
         std::fprintf(stderr, "  %s\n", error.c_str());
         return;
     }
-    // core_sim adds the noise and the turn-on bias on its body axes (FRD); the reference implementation
-    // adds the same draws on the sensor axes (FLU). The errors from the truth therefore agree on x and
-    // are mirrored on y and z.
-    auto mirrored = [](const sa::Vector3& native_error, const sa::Vector3& reference_error) {
-        return std::max({std::fabs(native_error.x - reference_error.x), std::fabs(native_error.y + reference_error.y),
-                         std::fabs(native_error.z + reference_error.z)});
+    // Both add the noise and the turn-on bias on Project AirSim's body axes (FRD).
+    auto largest = [](const sa::Vector3& a, const sa::Vector3& b) {
+        return std::max({std::fabs(a.x - b.x), std::fabs(a.y - b.y), std::fabs(a.z - b.z)});
     };
-    auto minus = [](const sa::Vector3& a, const sa::Vector3& b) { return sa::Vector3{a.x - b.x, a.y - b.y, a.z - b.z}; };
     double worst_gyro = 0.0, worst_accel = 0.0;
     for (int k = 0; k < 20000; ++k) {
         sa::ImuSample a{}, b{};
         const sa::ImuTruth t = truth_at(k);
         check(native->step(t, a, error) && reference->step(t, b, error), "step both");
         if (a.gyro.updated) {
-            worst_gyro = std::max(worst_gyro, mirrored(minus(a.gyro.value, t.angular_velocity),
-                                                       minus(b.gyro.value, t.angular_velocity)));
-            worst_accel = std::max(worst_accel, mirrored(minus(a.accel.value, t.specific_force),
-                                                         minus(b.accel.value, t.specific_force)));
+            worst_gyro = std::max(worst_gyro, largest(a.gyro.value, b.gyro.value));
+            worst_accel = std::max(worst_accel, largest(a.accel.value, b.accel.value));
         }
     }
-    std::printf("native vs reference over 20 s, y/z mirrored: gyro %.3g rad/s, accel %.3g m/s2 (largest difference)\n",
+    std::printf("native vs reference over 20 s: gyro %.3g rad/s, accel %.3g m/s2 (largest difference)\n",
                 worst_gyro, worst_accel);
     check(worst_gyro < 1e-6 && worst_accel < 1e-5,
-          "same seeds and draw order as the reference implementation, y/z noise and bias mirrored (float precision)");
+          "the reference implementation follows core_sim (same seeds, draw order and axes) within float precision");
 }
 
 void reset_starts_the_same_sequence()

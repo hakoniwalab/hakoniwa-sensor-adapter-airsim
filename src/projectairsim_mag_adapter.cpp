@@ -111,6 +111,13 @@ Vector3 mul(const Vector3& v, double k)
 {
     return {v.x*k, v.y*k, v.z*k};
 }
+// Project AirSim adds the noise and the startup bias on its body axes (FRD), so noise-sigma,
+// noise-bias and every draw are FRD vectors. The interface's sensor axes are FLU: y and z
+// change sign (the same both ways).
+Vector3 frd_to_flu(const Vector3& v)
+{
+    return {v.x, -v.y, -v.z};
+}
 
 // A separate mt19937 per axis, as in upstream RandomVectorGaussianR,
 // which seeds x/y/z to 1/2/3. Two such generators exist upstream: white
@@ -184,7 +191,7 @@ public:
                 // Project AirSim EarthUtils or re-apply the mounting rotation.
                 const Vector3 white_g=noise_.next();
                 const Vector3 true_g=mul(truth.magnetic_field, 1.0 / kNanoteslaPerGauss);
-                const Vector3 observed_g=add(add(mul(true_g, cfg_.scale_factor), white_g), bias_g_);
+                const Vector3 observed_g=add(mul(true_g, cfg_.scale_factor), frd_to_flu(add(white_g, bias_g_)));
                 const Vector3 result_nt=mul(observed_g,kNanoteslaPerGauss);
                 if (!finite(result_nt))
                     throw std::runtime_error("magnetometer measurement is non-finite");
@@ -223,9 +230,11 @@ public:
     const std::vector<LogColumn>& log_columns() const override {return columns_;}
     void log_values(std::vector<double>& values) const override
     {
-        const Vector3 bias_nt=mul(bias_g_,kNanoteslaPerGauss);
+        // Logged in the sensor axes (FLU), like the samples.
+        const Vector3 bias_nt=frd_to_flu(mul(bias_g_,kNanoteslaPerGauss));
+        const Vector3 white_nt=frd_to_flu(white_last_nt_);
         values={bias_nt.x,bias_nt.y,bias_nt.z,
-                white_last_nt_.x,white_last_nt_.y,white_last_nt_.z};
+                white_nt.x,white_nt.y,white_nt.z};
     }
 
 private:

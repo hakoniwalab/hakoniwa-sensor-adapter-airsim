@@ -71,7 +71,7 @@ void noisy_reset_and_independence() {
     sa::ImuCalibration cal{};
     check(first->capabilities().noise && first->capabilities().drift && first->capabilities().thread_safe_across_instances,"noise/drift/instance capability");
     check(!first->capabilities().delay && !first->capabilities().range_clamp,"unsupported features declared false");
-    check(first->calibration(cal) && near(cal.accel_zero_g_offset.x,0.01),"initial calibration");
+    check(first->calibration(cal) && near(cal.accel_zero_g_offset.x,0.01) && near(cal.accel_zero_g_offset.y,0.02) && near(cal.accel_zero_g_offset.z,-0.03),"initial calibration in FLU");
     std::vector<double> vals;
     first->log_values(vals);
     check(vals.size()==first->log_columns().size() && vals.size()==6,"diagnostic log columns align");
@@ -92,6 +92,12 @@ void upstream_equation_and_default_rng() {
     const auto gyro_noise=next();(void)next();
     check(near(actual.accel.value.x,0.5+acc_noise.x*(0.002353/sqrt_dt)+0.01),"Project AirSim accel equation/reference draw");
     check(near(actual.gyro.value.x,0.1+gyro_noise.x*(0.0000872665/sqrt_dt)+0.001),"Project AirSim gyro equation/reference draw");
+    // The draws and the turn-on bias are on Project AirSim's body axes (FRD): y and z change sign in FLU.
+    const auto in=input(0);
+    check(near(actual.accel.value.y,in.specific_force.y-(acc_noise.y*(0.002353/sqrt_dt)-0.02)) &&
+          near(actual.accel.value.z,in.specific_force.z-(acc_noise.z*(0.002353/sqrt_dt)+0.03)),"accel noise and bias on FRD axes");
+    check(near(actual.gyro.value.y,in.angular_velocity.y-(gyro_noise.y*(0.0000872665/sqrt_dt)+0.002)) &&
+          near(actual.gyro.value.z,in.angular_velocity.z-(gyro_noise.z*(0.0000872665/sqrt_dt)-0.003)),"gyro noise and bias on FRD axes");
 }
 void invalid_config() {
     auto s=setup("does-not-exist.json");std::string e;
