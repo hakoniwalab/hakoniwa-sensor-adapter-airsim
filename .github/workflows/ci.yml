@@ -1,0 +1,23 @@
+name: Build and contract tests
+on:
+  push:
+  pull_request:
+jobs:
+  ubuntu:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: hakoniwa-sensor-adapter-airsim
+      - uses: actions/checkout@v4
+        with:
+          repository: hakoniwalab/hakoniwa-sensor-adapter
+          path: hakoniwa-sensor-adapter
+      - name: Install Boost headers
+        run: sudo apt-get update && sudo apt-get install -y libboost-dev
+      - name: Configure
+        run: cmake -S hakoniwa-sensor-adapter-airsim -B build -DHAKONIWA_SENSOR_ADAPTER_AIRSIM_BUILD_TESTS=ON -DCMAKE_BUILD_TYPE=Release
+      - name: Build
+        run: cmake --build build --parallel 2
+      - name: Test
+        run: ctest --test-dir build --output-on-failure
