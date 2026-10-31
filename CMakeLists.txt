@@ -3,10 +3,13 @@ project(hakoniwa_sensor_adapter_airsim LANGUAGES CXX)
 
 set(HAKONIWA_SENSOR_ADAPTER_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/../hakoniwa-sensor-adapter"
     CACHE PATH "Path to the publicly available hakoniwa-sensor-adapter checkout")
-if(NOT EXISTS "${HAKONIWA_SENSOR_ADAPTER_ROOT}/CMakeLists.txt")
-    message(FATAL_ERROR "Clone hakoniwa-sensor-adapter beside this repository or set HAKONIWA_SENSOR_ADAPTER_ROOT")
+# A parent project that already has the interface (for example a comparison) keeps its own.
+if(NOT TARGET hakoniwa_sensor_adapter)
+    if(NOT EXISTS "${HAKONIWA_SENSOR_ADAPTER_ROOT}/CMakeLists.txt")
+        message(FATAL_ERROR "Clone hakoniwa-sensor-adapter beside this repository or set HAKONIWA_SENSOR_ADAPTER_ROOT")
+    endif()
+    add_subdirectory("${HAKONIWA_SENSOR_ADAPTER_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/sensor-adapter")
 endif()
-add_subdirectory("${HAKONIWA_SENSOR_ADAPTER_ROOT}" "${CMAKE_CURRENT_BINARY_DIR}/sensor-adapter")
 find_package(Boost REQUIRED)
 add_library(hakoniwa_sensor_adapter_airsim STATIC
     src/projectairsim_imu_adapter.cpp
