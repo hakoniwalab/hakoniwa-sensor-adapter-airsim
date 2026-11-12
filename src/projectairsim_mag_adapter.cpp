@@ -61,8 +61,10 @@ Config load_config(const MagAdapterSetup& setup)
     if (!file) throw std::runtime_error("cannot open magnetometer config: " + setup.config_path);
     boost::property_tree::ptree json;
     boost::property_tree::read_json(file, json);
-    if (json.get<std::string>("type", "magnetometer") != "magnetometer")
-        throw std::runtime_error("magnetometer config type must be 'magnetometer'");
+    // "mag" is the host's sensor type name; "magnetometer" is Project AirSim's.
+    const std::string type = json.get<std::string>("type", "magnetometer");
+    if (type != "magnetometer" && type != "mag")
+        throw std::runtime_error("magnetometer config type must be 'magnetometer' or 'mag'");
 
     // Host has applied both the magnetic world-field model and mounting pose.
     // Silently accepting native ref-source/origin configuration would claim
