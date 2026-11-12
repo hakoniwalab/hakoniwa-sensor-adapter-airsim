@@ -31,6 +31,29 @@ Project AirSim sensor. The native constructor is private and requires
 simulation managers; using the full `core_sim` library also brings unrelated
 dependencies.
 
+## Choosing it by name ("airsim")
+
+Hosts that choose a sensor implementation by name, such as the Hakoniwa Robot Runtime, get the
+reference implementation as `airsim`. The library provides the descriptor
+(`HAKO_SENSOR_ADAPTER_DEFINE_IMPLEMENTATION(airsim)` in `src/airsim_implementation.cpp`):
+
+| Sensor type | Factory | Definition file |
+|---|---|---|
+| `imu` | `create_projectairsim_imu_adapter` | Project AirSim IMU JSON (`accelerometer`, `gyroscope`, `update-rate-hz`) |
+| `mag` | `create_projectairsim_mag_adapter` | Project AirSim magnetometer JSON |
+| `baro` | `create_projectairsim_baro_adapter` | Project AirSim barometer JSON |
+| `gps` | `create_projectairsim_gps_adapter` | Project AirSim GPS JSON |
+
+The other sensor types are not provided. The native adapters are not in the descriptor.
+
+The definition file's `type` may be the host's sensor type name (`imu`, `mag`, `baro`, `gps`) or
+Project AirSim's (`magnetometer`, `barometer`). A host that requires the definition `type` to
+equal its sensor type can use its own names.
+
+This is a compatibility implementation of the Project AirSim model equations, not Project AirSim
+itself. It does not model filters, delays, clipping, or separate gyro and accelerometer periods
+(see [Scope and limitations](#scope-and-limitations)).
+
 ## Build and test
 
 Requires CMake 3.16+, C++17 and Boost headers (PropertyTree JSON parser).

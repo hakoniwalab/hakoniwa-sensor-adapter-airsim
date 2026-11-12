@@ -15,7 +15,8 @@ add_library(hakoniwa_sensor_adapter_airsim STATIC
     src/projectairsim_imu_adapter.cpp
     src/projectairsim_gps_adapter.cpp
     src/projectairsim_baro_adapter.cpp
-    src/projectairsim_mag_adapter.cpp)
+    src/projectairsim_mag_adapter.cpp
+    src/airsim_implementation.cpp)
 target_compile_features(hakoniwa_sensor_adapter_airsim PUBLIC cxx_std_17)
 target_include_directories(hakoniwa_sensor_adapter_airsim PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/include" PRIVATE ${Boost_INCLUDE_DIRS})
 target_link_libraries(hakoniwa_sensor_adapter_airsim PUBLIC hakoniwa_sensor_adapter)
@@ -100,6 +101,12 @@ if(HAKONIWA_SENSOR_ADAPTER_AIRSIM_BUILD_TESTS)
     target_compile_definitions(projectairsim_mag_adapter_test
         PRIVATE HAKO_AIRSIM_CONFIG_DIR="${CMAKE_CURRENT_SOURCE_DIR}/config")
     add_test(NAME projectairsim_mag_adapter COMMAND projectairsim_mag_adapter_test)
+
+    add_executable(airsim_implementation_test test/airsim_implementation_test.cpp)
+    target_link_libraries(airsim_implementation_test PRIVATE hakoniwa_sensor_adapter_airsim)
+    target_compile_definitions(airsim_implementation_test
+        PRIVATE HAKO_AIRSIM_CONFIG_DIR="${CMAKE_CURRENT_SOURCE_DIR}/config")
+    add_test(NAME airsim_implementation COMMAND airsim_implementation_test)
 
     if(HAKONIWA_SENSOR_ADAPTER_AIRSIM_NATIVE)
         add_executable(projectairsim_native_imu_adapter_test test/projectairsim_native_imu_adapter_test.cpp)

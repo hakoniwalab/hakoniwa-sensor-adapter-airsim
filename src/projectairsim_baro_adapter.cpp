@@ -49,8 +49,10 @@ Config load_config(const BaroAdapterSetup& setup)
     if (!input) throw std::runtime_error("cannot open barometer config: " + setup.config_path);
     boost::property_tree::ptree json;
     boost::property_tree::read_json(input, json);
-    if (json.get<std::string>("type", "barometer") != "barometer")
-        throw std::runtime_error("barometer config type must be 'barometer'");
+    // "baro" is the host's sensor type name; "barometer" is Project AirSim's.
+    const std::string type = json.get<std::string>("type", "barometer");
+    if (type != "barometer" && type != "baro")
+        throw std::runtime_error("barometer config type must be 'barometer' or 'baro'");
 
     Config cfg{};
     cfg.qnh_hpa = json.get<float>("qnh", cfg.qnh_hpa);
