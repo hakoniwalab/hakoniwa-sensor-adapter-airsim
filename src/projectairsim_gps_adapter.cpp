@@ -28,6 +28,25 @@ struct Config {
     std::uint64_t period_ns{};
 };
 
+bool validate_period_ns(std::uint64_t period_ns, std::uint64_t physics_step_ns,
+                        std::string& error)
+{
+    if (period_ns == 0) {
+        error = "GPS update period must be nonzero";
+        return false;
+    }
+    if (period_ns < physics_step_ns) {
+        error = "GPS update period must be at least physics_step_ns";
+        return false;
+    }
+    if (period_ns % physics_step_ns != 0) {
+        error = "GPS update period must be an integer multiple of physics_step_ns";
+        return false;
+    }
+    error.clear();
+    return true;
+}
+
 Config load_config(const GpsAdapterSetup& setup)
 {
     if (setup.physics_step_ns == 0)
@@ -65,9 +84,11 @@ Config load_config(const GpsAdapterSetup& setup)
         ns > static_cast<double>(std::numeric_limits<std::int64_t>::max()))
         throw std::runtime_error("GPS period must be >= physics_step_ns");
     c.period_ns = static_cast<std::uint64_t>(std::llround(ns));
-    if (c.period_ns == 0 || c.period_ns % setup.physics_step_ns != 0 ||
-        std::fabs(ns - static_cast<double>(c.period_ns)) > 0.001)
+    if (std::fabs(ns - static_cast<double>(c.period_ns)) > 0.001)
         throw std::runtime_error("GPS period must be an integer multiple of physics_step_ns");
+    std::string period_error;
+    if (!validate_period_ns(c.period_ns, setup.physics_step_ns, period_error))
+        throw std::runtime_error(period_error);
     return c;
 }
 
@@ -105,7 +126,8 @@ public:
     ProjectAirSimGpsAdapter(GpsAdapterSetup setup, Config cfg)
         : setup_(std::move(setup)), cfg_(cfg),
           eph_(cfg.eph_time_constant, cfg.eph_initial, cfg.eph_final),
-          epv_(cfg.epv_time_constant, cfg.epv_initial, cfg.epv_final)
+          epv_(cfg.epv_time_constant, cfg.epv_initial, cfg.epv_final),
+          period_ns_(cfg.period_ns)
     {
         columns_ = {{"eph","dimensionless"},{"epv","dimensionless"}};
     }
@@ -118,10 +140,10 @@ public:
             if (next_ns_ > std::numeric_limits<std::uint64_t>::max() - setup_.physics_step_ns)
                 throw std::runtime_error("simulation time overflow");
 
-            if (truth.sim_time_ns % cfg_.period_ns == 0) {
+            if (truth.sim_time_ns % period_ns_ == 0) {
                 // Assumption for comparison: one GPS update per sample, dt=period.
                 // The first sample at t=0 advances the filter once.
-                const double dt = static_cast<double>(cfg_.period_ns) * 1e-9;
+                const double dt = static_cast<double>(period_ns_) * 1e-9;
                 eph_.update(dt);
                 epv_.update(dt);
                 GpsSample sample{};
@@ -147,11 +169,22 @@ public:
         }
     }
     bool reset(std::string& error) override {
+        period_ns_ = cfg_.period_ns;
         next_ns_ = 0;
         last_ = {};
         eph_.reset();
         epv_.reset();
         error.clear();
+        return true;
+    }
+    bool update_period_ns(std::uint64_t& period_ns) const override {
+        period_ns = period_ns_;
+        return true;
+    }
+    bool set_update_period_ns(std::uint64_t period_ns, std::string& error) override {
+        if (!validate_period_ns(period_ns, setup_.physics_step_ns, error))
+            return false;
+        period_ns_ = period_ns;
         return true;
     }
     GpsAdapterCapabilities capabilities() const override {
@@ -171,6 +204,7 @@ private:
     GpsAdapterSetup setup_;
     Config cfg_;
     FirstOrderFilter eph_, epv_;
+    std::uint64_t period_ns_{0};
     std::uint64_t next_ns_{0};
     GpsSample last_{};
     std::vector<LogColumn> columns_;

@@ -84,6 +84,15 @@ must be a positive integer multiple of `physics_step_ns`. The host passes
 with `updated=false` and the original `sample_time_ns`.
 Full robot JSONC and the native Project AirSim scheduler are not parsed.
 
+The four reference adapters support reading and changing the update period at runtime; the IMU
+reports one shared period for gyro and accelerometer, and a per-part setter only accepts that
+current shared value. A successful change preserves simulation time, the held sample, startup
+bias, drift/filter state, and random-stream position, resets no other state, and schedules the
+next measurement on a multiple of the new period counted from time zero; IMU noise/drift,
+barometer drift, and GPS filter calculations use the new period immediately. `reset()` restores
+the configured period and the usual creation state. The optional native `core_sim` adapters leave
+these calls at the public interface defaults, so they neither report nor change their period.
+
 At each sample, the IMU applies the upstream-style equations:
 
 - `measurement = truth + Gaussian(0,1) * random_walk / sqrt(max(dt, min_dt)) + bias`
@@ -181,7 +190,8 @@ Examples: [ideal](config/baro-ideal.json) and [noise](config/baro-noise.json).
 
 The adapter uses `update-frequency` (50 Hz by default) as its sample
 rate; samples are held between measurements, beginning at t=0.
-The GaussianMarkov update uses `dt=1/update-frequency`. However, native
+The GaussianMarkov update uses the current period as `dt` (initially
+`1/update-frequency`). However, native
 `Barometer::Update` receives dt from the Scene, so identical scheduler
 semantics are **not yet demonstrated**. Nonzero `update-latency` or
 `startup-delay` is explicitly rejected: the native sensor class parses

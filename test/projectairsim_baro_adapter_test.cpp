@@ -164,6 +164,45 @@ void seeded_reset_and_instance_independence() {
     }
     check(different,"different vehicle indices produce independent streams");
 }
+void update_period_contract() {
+    std::string error;
+    auto baro=sa::airsim::create_projectairsim_baro_adapter(setup("baro-ideal.json"),error);
+    check(bool(baro),"period-contract barometer created");if(!baro)return;
+
+    // baro-ideal.json is 50 Hz: 1,000,000,000 / 50 = 20,000,000 ns (twenty 1 ms steps).
+    std::uint64_t period=0;
+    check(baro->update_period_ns(period) && period==20000000ULL,
+          "barometer reports configured 50 Hz period");
+    sa::BaroSample out{};
+    check(baro->step(truth(0),out,error) && baro->step(truth(1),out,error),
+          "barometer advances before a period change");
+    check(baro->set_update_period_ns(6000000ULL,error) &&
+          baro->update_period_ns(period) && period==6000000ULL,
+          "barometer accepts a six-step period");
+    std::vector<int> updated_steps;
+    for(int k=2;k<=14;++k) {
+        check(baro->step(truth(k),out,error),"barometer step after period change");
+        if(out.updated)updated_steps.push_back(k);
+    }
+    // From steps 2..14, the hand-worked multiples of six from time zero are 6 and 12.
+    check(updated_steps==std::vector<int>({6,12}),
+          "barometer updates on time-zero multiples of the new period");
+
+    error.clear();
+    check(!baro->set_update_period_ns(0,error) && !error.empty() &&
+          baro->update_period_ns(period) && period==6000000ULL,
+          "barometer refuses zero without changing its period");
+    error.clear();
+    check(!baro->set_update_period_ns(500000ULL,error) && !error.empty() &&
+          baro->update_period_ns(period) && period==6000000ULL,
+          "barometer refuses a sub-step period without changing its period");
+    error.clear();
+    check(!baro->set_update_period_ns(1500000ULL,error) && !error.empty() &&
+          baro->update_period_ns(period) && period==6000000ULL,
+          "barometer refuses a fractional-step period without changing its period");
+    check(baro->reset(error) && baro->update_period_ns(period) && period==20000000ULL,
+          "barometer reset restores the configured period");
+}
 
 void errors_are_fail_closed() {
     std::string error;
@@ -199,6 +238,7 @@ int main() {
     qnh_correction_and_pressure_altitude();
     default_native_random_equations();
     seeded_reset_and_instance_independence();
+    update_period_contract();
     errors_are_fail_closed();
     if (failures==0)std::puts("projectairsim_baro_adapter_test: OK");
     return failures ? EXIT_FAILURE : EXIT_SUCCESS;

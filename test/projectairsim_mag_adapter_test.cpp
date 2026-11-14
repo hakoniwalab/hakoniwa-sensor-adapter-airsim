@@ -148,6 +148,45 @@ void seeded_reset_and_independent_instances() {
     }
     check(different,"distinct vehicle IDs isolate random sequences");
 }
+void update_period_contract() {
+    std::string e;
+    auto mag=sa::airsim::create_projectairsim_mag_adapter(setup("mag-ideal.json"),e);
+    check(bool(mag),"period-contract magnetometer created");if(!mag)return;
+
+    // mag-ideal.json is 100 Hz: 1,000,000,000 / 100 = 10,000,000 ns (ten 1 ms steps).
+    std::uint64_t period=0;
+    check(mag->update_period_ns(period) && period==10000000ULL,
+          "magnetometer reports configured 100 Hz period");
+    sa::MagSample out{};
+    check(mag->step(truth(0),out,e) && mag->step(truth(1),out,e),
+          "magnetometer advances before a period change");
+    check(mag->set_update_period_ns(6000000ULL,e) &&
+          mag->update_period_ns(period) && period==6000000ULL,
+          "magnetometer accepts a six-step period");
+    std::vector<int> updated_steps;
+    for(int k=2;k<=14;++k) {
+        check(mag->step(truth(k),out,e),"magnetometer step after period change");
+        if(out.updated)updated_steps.push_back(k);
+    }
+    // From steps 2..14, the hand-worked multiples of six from time zero are 6 and 12.
+    check(updated_steps==std::vector<int>({6,12}),
+          "magnetometer updates on time-zero multiples of the new period");
+
+    e.clear();
+    check(!mag->set_update_period_ns(0,e) && !e.empty() &&
+          mag->update_period_ns(period) && period==6000000ULL,
+          "magnetometer refuses zero without changing its period");
+    e.clear();
+    check(!mag->set_update_period_ns(500000ULL,e) && !e.empty() &&
+          mag->update_period_ns(period) && period==6000000ULL,
+          "magnetometer refuses a sub-step period without changing its period");
+    e.clear();
+    check(!mag->set_update_period_ns(1500000ULL,e) && !e.empty() &&
+          mag->update_period_ns(period) && period==6000000ULL,
+          "magnetometer refuses a fractional-step period without changing its period");
+    check(mag->reset(e) && mag->update_period_ns(period) && period==10000000ULL,
+          "magnetometer reset restores the configured period");
+}
 void invalid_config_and_inputs() {
     std::string e;
     check(!sa::airsim::create_projectairsim_mag_adapter(setup("mag-does-not-exist.json"),e) &&
@@ -181,6 +220,7 @@ int main() {
     scale_is_isotropic();
     native_default_gauss_and_bias_distribution();
     seeded_reset_and_independent_instances();
+    update_period_contract();
     invalid_config_and_inputs();
     if(failures==0)std::puts("projectairsim_mag_adapter_test: OK");
     return failures?EXIT_FAILURE:EXIT_SUCCESS;
