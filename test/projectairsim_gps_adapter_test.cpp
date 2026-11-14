@@ -93,6 +93,45 @@ void convergence_and_reset() {
               "reset reproduces first 250 steps");
     }
 }
+void update_period_contract() {
+    std::string error;
+    auto gps=sa::airsim::create_projectairsim_gps_adapter(setup("gps-immediate.json"),error);
+    check(bool(gps),"period-contract GPS created");if(!gps)return;
+
+    // gps-immediate.json is 10 Hz: 1,000,000,000 / 10 = 100,000,000 ns (one hundred 1 ms steps).
+    std::uint64_t period=0;
+    check(gps->update_period_ns(period) && period==100000000ULL,
+          "GPS reports configured 10 Hz period");
+    sa::GpsSample out{};
+    check(gps->step(truth(0),out,error) && gps->step(truth(1),out,error),
+          "GPS advances before a period change");
+    check(gps->set_update_period_ns(6000000ULL,error) &&
+          gps->update_period_ns(period) && period==6000000ULL,
+          "GPS accepts a six-step period");
+    std::vector<int> updated_steps;
+    for(int k=2;k<=14;++k) {
+        check(gps->step(truth(k),out,error),"GPS step after period change");
+        if(out.updated)updated_steps.push_back(k);
+    }
+    // From steps 2..14, the hand-worked multiples of six from time zero are 6 and 12.
+    check(updated_steps==std::vector<int>({6,12}),
+          "GPS updates on time-zero multiples of the new period");
+
+    error.clear();
+    check(!gps->set_update_period_ns(0,error) && !error.empty() &&
+          gps->update_period_ns(period) && period==6000000ULL,
+          "GPS refuses zero without changing its period");
+    error.clear();
+    check(!gps->set_update_period_ns(500000ULL,error) && !error.empty() &&
+          gps->update_period_ns(period) && period==6000000ULL,
+          "GPS refuses a sub-step period without changing its period");
+    error.clear();
+    check(!gps->set_update_period_ns(1500000ULL,error) && !error.empty() &&
+          gps->update_period_ns(period) && period==6000000ULL,
+          "GPS refuses a fractional-step period without changing its period");
+    check(gps->reset(error) && gps->update_period_ns(period) && period==100000000ULL,
+          "GPS reset restores the configured period");
+}
 void rejects_bad_inputs() {
     std::string error;
     check(!sa::airsim::create_projectairsim_gps_adapter(setup("missing.json"),error) &&
@@ -114,6 +153,7 @@ void rejects_bad_inputs() {
 int main() {
     passthrough_and_sample_hold();
     convergence_and_reset();
+    update_period_contract();
     rejects_bad_inputs();
     if(failed==0)std::puts("projectairsim_gps_adapter_test: OK");
     return failed?EXIT_FAILURE:EXIT_SUCCESS;

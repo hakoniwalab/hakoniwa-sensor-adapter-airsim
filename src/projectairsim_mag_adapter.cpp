@@ -37,6 +37,25 @@ struct Config {
     std::uint64_t period_ns{};
 };
 
+bool validate_period_ns(std::uint64_t period_ns, std::uint64_t physics_step_ns,
+                        std::string& error)
+{
+    if (period_ns == 0) {
+        error = "magnetometer update period must be nonzero";
+        return false;
+    }
+    if (period_ns < physics_step_ns) {
+        error = "magnetometer update period must be at least physics_step_ns";
+        return false;
+    }
+    if (period_ns % physics_step_ns != 0) {
+        error = "magnetometer update period must be an integer multiple of physics_step_ns";
+        return false;
+    }
+    error.clear();
+    return true;
+}
+
 Vector3 parse_vector(const std::string& source, const char* name)
 {
     std::istringstream input(source);
@@ -96,9 +115,11 @@ Config load_config(const MagAdapterSetup& setup)
         ns > static_cast<double>(std::numeric_limits<std::int64_t>::max()))
         throw std::runtime_error("magnetometer period must be >= physics_step_ns");
     cfg.period_ns = static_cast<std::uint64_t>(std::llround(ns));
-    if (cfg.period_ns == 0 || cfg.period_ns % setup.physics_step_ns != 0 ||
-        std::fabs(ns - static_cast<double>(cfg.period_ns)) > 0.001)
+    if (std::fabs(ns - static_cast<double>(cfg.period_ns)) > 0.001)
         throw std::runtime_error("magnetometer period must be an integer multiple of physics_step_ns");
+    std::string period_error;
+    if (!validate_period_ns(cfg.period_ns, setup.physics_step_ns, period_error))
+        throw std::runtime_error(period_error);
     return cfg;
 }
 bool finite(const Vector3& v)
@@ -187,7 +208,7 @@ public:
             if (next_ns_ > std::numeric_limits<std::uint64_t>::max() - setup_.physics_step_ns)
                 throw std::runtime_error("simulation time overflow");
 
-            if (truth.sim_time_ns % cfg_.period_ns == 0) {
+            if (truth.sim_time_ns % period_ns_ == 0) {
                 // The host supplies the field already rotated into the sensor
                 // frame. We apply upstream scale/noise/bias, but do not call
                 // Project AirSim EarthUtils or re-apply the mounting rotation.
@@ -216,6 +237,18 @@ public:
     {
         reset_state();
         error.clear();
+        return true;
+    }
+    bool update_period_ns(std::uint64_t& period_ns) const override
+    {
+        period_ns = period_ns_;
+        return true;
+    }
+    bool set_update_period_ns(std::uint64_t period_ns, std::string& error) override
+    {
+        if (!validate_period_ns(period_ns, setup_.physics_step_ns, error))
+            return false;
+        period_ns_ = period_ns;
         return true;
     }
     MagAdapterCapabilities capabilities() const override
@@ -251,6 +284,7 @@ private:
         bias_g_=bias_.next();
         white_last_nt_={};
         last_={};
+        period_ns_=cfg_.period_ns;
         next_ns_=0;
     }
 
@@ -261,6 +295,7 @@ private:
     Vector3 bias_g_{};
     Vector3 white_last_nt_{};
     MagSample last_{};
+    std::uint64_t period_ns_{0};
     std::uint64_t next_ns_{0};
     std::vector<LogColumn> columns_;
 };

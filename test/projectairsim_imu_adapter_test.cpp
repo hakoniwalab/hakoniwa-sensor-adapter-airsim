@@ -99,6 +99,56 @@ void upstream_equation_and_default_rng() {
     check(near(actual.gyro.value.y,in.angular_velocity.y-(gyro_noise.y*(0.0000872665/sqrt_dt)+0.002)) &&
           near(actual.gyro.value.z,in.angular_velocity.z-(gyro_noise.z*(0.0000872665/sqrt_dt)-0.003)),"gyro noise and bias on FRD axes");
 }
+void update_period_contract() {
+    std::string e;
+    auto a=sa::airsim::create_projectairsim_imu_adapter(setup("imu-ideal.json"),e);
+    check(a!=nullptr,"period-contract IMU created");if(!a)return;
+
+    // imu-ideal.json is 250 Hz: 1,000,000,000 / 250 = 4,000,000 ns (four 1 ms steps).
+    std::uint64_t period=0;
+    check(a->update_period_ns(period) && period==4000000ULL,
+          "IMU reports configured 250 Hz period");
+    check(a->part_update_period_ns(sa::ImuPart::gyro,period) && period==4000000ULL &&
+          a->part_update_period_ns(sa::ImuPart::accel,period) && period==4000000ULL,
+          "gyro and accelerometer report the shared configured period");
+    check(a->set_part_update_period_ns(sa::ImuPart::gyro,4000000ULL,e),
+          "setting one IMU part to the shared period is accepted");
+    e.clear();
+    check(!a->set_part_update_period_ns(sa::ImuPart::accel,8000000ULL,e) && !e.empty() &&
+          a->update_period_ns(period) && period==4000000ULL,
+          "one IMU part cannot diverge from the shared period");
+
+    sa::ImuSample out{};
+    check(a->step(input(0),out,e) && a->step(input(1),out,e),
+          "IMU advances before a period change");
+    check(a->set_update_period_ns(6000000ULL,e) &&
+          a->update_period_ns(period) && period==6000000ULL,
+          "IMU accepts a six-step period");
+    std::vector<int> updated_steps;
+    for(int k=2;k<=14;++k) {
+        check(a->step(input(k),out,e),"IMU step after period change");
+        check(out.gyro.updated==out.accel.updated,"IMU parts retain shared timing");
+        if(out.gyro.updated)updated_steps.push_back(k);
+    }
+    // From steps 2..14, the hand-worked multiples of six from time zero are 6 and 12.
+    check(updated_steps==std::vector<int>({6,12}),
+          "IMU updates on time-zero multiples of the new period");
+
+    e.clear();
+    check(!a->set_update_period_ns(0,e) && !e.empty() &&
+          a->update_period_ns(period) && period==6000000ULL,
+          "IMU refuses zero without changing its period");
+    e.clear();
+    check(!a->set_update_period_ns(500000ULL,e) && !e.empty() &&
+          a->update_period_ns(period) && period==6000000ULL,
+          "IMU refuses a sub-step period without changing its period");
+    e.clear();
+    check(!a->set_update_period_ns(1500000ULL,e) && !e.empty() &&
+          a->update_period_ns(period) && period==6000000ULL,
+          "IMU refuses a fractional-step period without changing its period");
+    check(a->reset(e) && a->update_period_ns(period) && period==4000000ULL,
+          "IMU reset restores the configured period");
+}
 void invalid_config() {
     auto s=setup("does-not-exist.json");std::string e;
     check(!sa::airsim::create_projectairsim_imu_adapter(s,e) && !e.empty(),"missing config fails closed");
@@ -107,7 +157,8 @@ void invalid_config() {
 }
 }
 int main() {
-    ideal_and_time(); noisy_reset_and_independence(); upstream_equation_and_default_rng(); invalid_config();
+    ideal_and_time(); noisy_reset_and_independence(); upstream_equation_and_default_rng();
+    update_period_contract(); invalid_config();
     if(failures==0)std::puts("projectairsim_imu_adapter_test: OK");
     return failures?EXIT_FAILURE:EXIT_SUCCESS;
 }

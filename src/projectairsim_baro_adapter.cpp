@@ -41,6 +41,25 @@ struct Config {
     std::uint64_t period_ns{20000000};                // 50 Hz
 };
 
+bool validate_period_ns(std::uint64_t period_ns, std::uint64_t physics_step_ns,
+                        std::string& error)
+{
+    if (period_ns == 0) {
+        error = "barometer update period must be nonzero";
+        return false;
+    }
+    if (period_ns < physics_step_ns) {
+        error = "barometer update period must be at least physics_step_ns";
+        return false;
+    }
+    if (period_ns % physics_step_ns != 0) {
+        error = "barometer update period must be an integer multiple of physics_step_ns";
+        return false;
+    }
+    error.clear();
+    return true;
+}
+
 Config load_config(const BaroAdapterSetup& setup)
 {
     if (setup.physics_step_ns == 0)
@@ -91,9 +110,11 @@ Config load_config(const BaroAdapterSetup& setup)
         period_d > static_cast<double>(std::numeric_limits<std::int64_t>::max()))
         throw std::runtime_error("barometer period must be >= physics_step_ns");
     cfg.period_ns = static_cast<std::uint64_t>(std::llround(period_d));
-    if (cfg.period_ns == 0 || cfg.period_ns % setup.physics_step_ns != 0 ||
-        std::fabs(period_d - static_cast<double>(cfg.period_ns)) > 0.001)
+    if (std::fabs(period_d - static_cast<double>(cfg.period_ns)) > 0.001)
         throw std::runtime_error("barometer period must be an integer multiple of physics_step_ns");
+    std::string period_error;
+    if (!validate_period_ns(cfg.period_ns, setup.physics_step_ns, period_error))
+        throw std::runtime_error(period_error);
     return cfg;
 }
 
@@ -180,11 +201,11 @@ public:
             if (next_ns_ > std::numeric_limits<std::uint64_t>::max() - setup_.physics_step_ns)
                 throw std::runtime_error("simulation time overflow");
 
-            if (truth.sim_time_ns % cfg_.period_ns == 0) {
+            if (truth.sim_time_ns % period_ns_ == 0) {
                 // Upstream Barometer::Update takes sim_dt_nanos from Scene.
                 // The standalone adapter assumes one update each sensor period,
                 // starting at t=0, with dt = period.
-                const double dt = cfg_.period_ns / 1.0e9;
+                const double dt = period_ns_ / 1.0e9;
                 const double alpha = std::exp(-dt / cfg_.pressure_factor_tau);
                 // Upstream GaussianMarkov: alpha*old + (1-alpha)*normal*sigma.
                 // Deliberately NOT the conventional sqrt(1-alpha^2) OU update.
@@ -231,6 +252,20 @@ public:
         return true;
     }
 
+    bool update_period_ns(std::uint64_t& period_ns) const override
+    {
+        period_ns = period_ns_;
+        return true;
+    }
+
+    bool set_update_period_ns(std::uint64_t period_ns, std::string& error) override
+    {
+        if (!validate_period_ns(period_ns, setup_.physics_step_ns, error))
+            return false;
+        period_ns_ = period_ns;
+        return true;
+    }
+
     BaroAdapterCapabilities capabilities() const override
     {
         BaroAdapterCapabilities caps{};
@@ -258,6 +293,7 @@ private:
         white_rng_.seed(seed_for(setup_, 2u));
         markov_dist_.reset();
         white_dist_.reset();
+        period_ns_ = cfg_.period_ns;
         next_ns_ = 0;
         last_ = {};
         pressure_factor_ = 0.0f;
@@ -271,6 +307,7 @@ private:
     std::mt19937 white_rng_{};
     std::normal_distribution<float> markov_dist_;
     std::normal_distribution<float> white_dist_;
+    std::uint64_t period_ns_{0};
     std::uint64_t next_ns_{0};
     BaroSample last_{};
     float pressure_factor_{0};

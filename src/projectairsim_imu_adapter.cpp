@@ -38,6 +38,25 @@ struct Config {
     std::uint64_t period_ns{};
 };
 
+bool validate_period_ns(std::uint64_t period_ns, std::uint64_t physics_step_ns,
+                        std::string& error)
+{
+    if (period_ns == 0) {
+        error = "sensor update period must be nonzero";
+        return false;
+    }
+    if (period_ns < physics_step_ns) {
+        error = "sensor update period must be at least physics_step_ns";
+        return false;
+    }
+    if (period_ns % physics_step_ns != 0) {
+        error = "sensor update period must be an integer multiple of physics_step_ns";
+        return false;
+    }
+    error.clear();
+    return true;
+}
+
 Vector3 parse_vector(const std::string& s, const char* field)
 {
     std::istringstream input(s);
@@ -89,10 +108,12 @@ Config load_config(const ImuAdapterSetup& setup)
         throw std::runtime_error("sensor update period must be finite and >= physics step");
     }
     cfg.period_ns = static_cast<std::uint64_t>(std::llround(ns));
-    if (cfg.period_ns % setup.physics_step_ns != 0 ||
-        std::fabs(ns - static_cast<double>(cfg.period_ns)) > 0.001) {
+    if (std::fabs(ns - static_cast<double>(cfg.period_ns)) > 0.001) {
         throw std::runtime_error("sensor period must be an integer multiple of physics_step_ns");
     }
+    std::string period_error;
+    if (!validate_period_ns(cfg.period_ns, setup.physics_step_ns, period_error))
+        throw std::runtime_error(period_error);
     return cfg;
 }
 
@@ -159,8 +180,8 @@ public:
             if (next_time_ns_ > std::numeric_limits<std::uint64_t>::max() - setup_.physics_step_ns)
                 throw std::runtime_error("simulation time overflow");
 
-            if (truth.sim_time_ns % cfg_.period_ns == 0) {
-                const double dt = std::max(cfg_.period_ns / 1e9, cfg_.min_sample_time);
+            if (truth.sim_time_ns % period_ns_ == 0) {
+                const double dt = std::max(period_ns_ / 1e9, cfg_.min_sample_time);
                 const double root_dt = static_cast<double>(static_cast<float>(std::sqrt(dt)));
                 const Vector3 acc_white = gaussian_.next();
                 const Vector3 acc_measure = add(truth.specific_force, frd_to_flu(add(scale(acc_white, cfg_.acc.random_walk / root_dt), acc_bias_)));
@@ -195,6 +216,42 @@ public:
         return true;
     }
 
+    bool update_period_ns(std::uint64_t& period_ns) const override
+    {
+        period_ns = period_ns_;
+        return true;
+    }
+
+    bool set_update_period_ns(std::uint64_t period_ns, std::string& error) override
+    {
+        if (!validate_period_ns(period_ns, setup_.physics_step_ns, error))
+            return false;
+        period_ns_ = period_ns;
+        return true;
+    }
+
+    bool part_update_period_ns(ImuPart part, std::uint64_t& period_ns) const override
+    {
+        if (part != ImuPart::gyro && part != ImuPart::accel)
+            return false;
+        return update_period_ns(period_ns);
+    }
+
+    bool set_part_update_period_ns(ImuPart part, std::uint64_t period_ns,
+                                   std::string& error) override
+    {
+        if (part != ImuPart::gyro && part != ImuPart::accel) {
+            error = "unknown IMU part";
+            return false;
+        }
+        if (period_ns != period_ns_) {
+            error = "gyro and accelerometer share one period; a part cannot change independently";
+            return false;
+        }
+        error.clear();
+        return true;
+    }
+
     ImuAdapterCapabilities capabilities() const override
     {
         ImuAdapterCapabilities c{};
@@ -225,6 +282,7 @@ private:
     void reset_state()
     {
         gaussian_.reset(setup_);
+        period_ns_ = cfg_.period_ns;
         next_time_ns_ = 0;
         last_ = {};
         acc_bias_ = cfg_.acc.turn_on_bias;
@@ -232,6 +290,7 @@ private:
     }
     ImuAdapterSetup setup_;
     Config cfg_;
+    std::uint64_t period_ns_{0};
     std::uint64_t next_time_ns_{0};
     ImuSample last_{};
     Vector3 acc_bias_{}, gyro_bias_{};  // FRD, as Project AirSim keeps them
